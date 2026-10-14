@@ -14,7 +14,7 @@ CREATE TYPE "Unit" AS ENUM (
 
 CREATE TABLE "trip" (
   "id" uuid PRIMARY KEY,
-  "invite_link" "String" UNIQUE,
+  "invite_id" "String" UNIQUE,
   "owner_id" uuid
 );
 
@@ -32,18 +32,18 @@ CREATE TABLE "guest_trip" (
   "trip_id" uuid
 );
 
-CREATE TABLE "grocery_list_history" (
+CREATE TABLE "shopping_list_history" (
   "trip_id" uuid,
   "valid_from" datetime,
-  "grocery_list_item_id" uuid,
+  "shopping_list_item_id" uuid,
   "bought_at" datetime,
   "removed_at" datetime,
   "unit" "Unit",
   "amount" Decimal,
-  PRIMARY KEY ("trip_id", "valid_from", "grocery_list_item_id")
+  PRIMARY KEY ("trip_id", "valid_from", "shopping_list_item_id")
 );
 
-CREATE TABLE "grocery_list_item" (
+CREATE TABLE "shopping_list_item" (
   "id" uuid PRIMARY KEY,
   "category" "Category",
   "name" "String"
@@ -57,6 +57,6 @@ ALTER TABLE "guest_trip" ADD FOREIGN KEY ("profile_id") REFERENCES "profile" ("i
 
 ALTER TABLE "guest_trip" ADD FOREIGN KEY ("trip_id") REFERENCES "trip" ("id") DEFERRABLE INITIALLY IMMEDIATE;
 
-ALTER TABLE "grocery_list_history" ADD FOREIGN KEY ("trip_id") REFERENCES "trip" ("id") DEFERRABLE INITIALLY IMMEDIATE;
+ALTER TABLE "shopping_list_history" ADD FOREIGN KEY ("trip_id") REFERENCES "trip" ("id") DEFERRABLE INITIALLY IMMEDIATE;
 
-ALTER TABLE "grocery_list_history" ADD FOREIGN KEY ("grocery_list_item_id") REFERENCES "grocery_list_item" ("id") DEFERRABLE INITIALLY IMMEDIATE;
+ALTER TABLE "shopping_list_history" ADD FOREIGN KEY ("shopping_list_item_id") REFERENCES "shopping_list_item" ("id") DEFERRABLE INITIALLY IMMEDIATE;
