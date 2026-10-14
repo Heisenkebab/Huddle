@@ -1,0 +1,65 @@
+Table trip {
+  id uuid [pk]
+  invite_link String [unique]
+  owner_id uuid [ref: > profile.id]
+
+}
+
+Table profile {
+  user_id uuid [pk, ref: ?- user.id] 
+  id uuid [pk]
+  name String
+  color int
+  emoji String
+}
+
+Table guest_trip {
+  profile_id uuid [ref: > profile.id]
+  trip_id uuid [ref: > trip.id]
+}
+
+Table grocery_list_history {
+  trip_id uuid [pk, ref: > trip.id]
+  valid_from datetime [pk]
+  grocery_list_item_id uuid [pk, ref: > grocery_list_item.id]
+  bought_at datetime
+  removed_at datetime
+  unit Unit
+  amount Decimal
+}
+
+Table grocery_list_item {
+  id uuid [pk]
+  category Category
+  name String
+}
+
+Enum Category {
+  FOOOD
+  DRINK
+  DIARY
+  OTHER
+}
+
+Enum Unit {
+  KILO_GRAMM
+  GRAMM
+  LITER
+  AMOUNT
+}
+
+Table user {
+  id uuid [pk, not null]
+  image_url String
+}
+
+Table bill {
+  id uuid [pk]
+  image_url String
+  bills uuid [ref: > bills.id]
+}
+
+Table bills {
+  id uuid [pk]
+  
+}
