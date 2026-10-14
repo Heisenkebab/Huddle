@@ -7,7 +7,7 @@ CREATE TYPE "Category" AS ENUM (
 
 CREATE TYPE "Unit" AS ENUM (
   'KILOGRAM',
-  'GRAMM',
+  'GRAM',
   'LITER',
   'MILLILITER',
   'AMOUNT'
