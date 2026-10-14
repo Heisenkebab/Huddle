@@ -6,7 +6,7 @@ export enum Unit {
   AMOUNT = "AMOUNT",
 }
 
-export interface ShoppingListItem {
+export interface ShoppingListItemCreationBody {
   name: string;
   category: string;
   unit: Unit;
