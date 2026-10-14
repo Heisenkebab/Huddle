@@ -7,10 +7,8 @@ export enum Unit {
 }
 
 export interface ShoppingListItem {
-  id: string;
   name: string;
   category: string;
   unit: Unit;
   quantity: number;
-  bought_at: boolean;
 }
