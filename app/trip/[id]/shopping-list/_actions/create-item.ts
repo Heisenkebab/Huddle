@@ -1,16 +1,19 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { ShoppingListItemCreationBody } from "@/types/shopping-list";
+import { ActionResult } from "@/types/action-result";
+import { ShoppingListItemCreationBody as ShoppingListItemBody } from "@/types/shopping-list";
+
+export type CreateItemResult = ActionResult<{ id: string }>;
 
 export async function createItem(
   invite_id: string,
-  item: ShoppingListItemCreationBody,
-): Promise<boolean> {
+  item: ShoppingListItemBody,
+): Promise<CreateItemResult> {
   try {
     const supabase = await createClient();
     // Trip lookup, item insert and history insert run in one transaction
-    const { error } = await supabase.rpc("create_shopping_list_item", {
+    const { data, error } = await supabase.rpc("create_shopping_list_item", {
       p_invite_id: invite_id,
       p_name: item.name,
       p_category: item.category,
@@ -20,9 +23,9 @@ export async function createItem(
     if (error) {
       throw new Error(error.message);
     }
-    return true;
+    return { success: true, data: { id: data as string } };
   } catch (error) {
     console.error("createItem failed:", error);
-    return false;
+    return { success: false, error: "Failed to create item" };
   }
 }
