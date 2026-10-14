@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { ActionResult } from "@/types/action-result";
-import { ShoppingListItemCreationBody as ShoppingListItemBody } from "@/types/shopping-list";
+import { ShoppingListItemBody } from "@/types/shopping-list";
 
 export type CreateItemResult = ActionResult<{ id: string }>;
 

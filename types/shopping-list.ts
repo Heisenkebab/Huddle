@@ -13,7 +13,7 @@ export enum Category {
   OTHER = "OTHER",
 }
 
-export interface ShoppingListItemCreationBody {
+export interface ShoppingListItemBody {
   name: string;
   category: Category;
   unit: Unit;
