@@ -6,9 +6,10 @@ CREATE TYPE "Category" AS ENUM (
 );
 
 CREATE TYPE "Unit" AS ENUM (
-  'KILO_GRAMM',
+  'KILOGRAM',
   'GRAMM',
   'LITER',
+  'MILLILITER',
   'AMOUNT'
 );
 

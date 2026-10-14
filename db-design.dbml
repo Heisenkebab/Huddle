@@ -42,9 +42,10 @@ Enum Category {
 }
 
 Enum Unit {
-  KILO_GRAMM
+  KILOGRAM
   GRAMM
   LITER
+  MILLILITER
   AMOUNT
 }
 
