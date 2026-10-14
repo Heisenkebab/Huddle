@@ -1,7 +1,7 @@
 CREATE TYPE "Category" AS ENUM (
-  'FOOOD',
+  'FOOD',
   'DRINK',
-  'DIARY',
+  'DAIRY',
   'OTHER'
 );
 
@@ -15,17 +15,16 @@ CREATE TYPE "Unit" AS ENUM (
 
 CREATE TABLE "trip" (
   "id" uuid PRIMARY KEY,
-  "invite_id" "String" UNIQUE,
+  "invite_id" text UNIQUE,
   "owner_id" uuid
 );
 
 CREATE TABLE "profile" (
-  "user_id" uuid,
-  "id" uuid,
-  "name" "String",
+  "id" uuid PRIMARY KEY,
+  "user_id" uuid UNIQUE,
+  "name" text,
   "color" int,
-  "emoji" "String",
-  PRIMARY KEY ("user_id", "id")
+  "emoji" text
 );
 
 CREATE TABLE "guest_trip" (
@@ -35,19 +34,34 @@ CREATE TABLE "guest_trip" (
 
 CREATE TABLE "shopping_list_history" (
   "trip_id" uuid,
-  "valid_from" datetime,
+  "valid_from" timestamptz,
   "shopping_list_item_id" uuid,
-  "bought_at" datetime,
-  "removed_at" datetime,
+  "bought_at" timestamptz,
+  "removed_at" timestamptz,
   "unit" "Unit",
-  "amount" Decimal,
+  "amount" numeric,
   PRIMARY KEY ("trip_id", "valid_from", "shopping_list_item_id")
 );
 
 CREATE TABLE "shopping_list_item" (
   "id" uuid PRIMARY KEY,
   "category" "Category",
-  "name" "String"
+  "name" text
+);
+
+CREATE TABLE "user" (
+  "id" uuid PRIMARY KEY NOT NULL,
+  "image_url" text
+);
+
+CREATE TABLE "bill" (
+  "id" uuid PRIMARY KEY,
+  "image_url" text,
+  "bills" uuid
+);
+
+CREATE TABLE "bills" (
+  "id" uuid PRIMARY KEY
 );
 
 ALTER TABLE "trip" ADD FOREIGN KEY ("owner_id") REFERENCES "profile" ("id") DEFERRABLE INITIALLY IMMEDIATE;
@@ -61,3 +75,5 @@ ALTER TABLE "guest_trip" ADD FOREIGN KEY ("trip_id") REFERENCES "trip" ("id") DE
 ALTER TABLE "shopping_list_history" ADD FOREIGN KEY ("trip_id") REFERENCES "trip" ("id") DEFERRABLE INITIALLY IMMEDIATE;
 
 ALTER TABLE "shopping_list_history" ADD FOREIGN KEY ("shopping_list_item_id") REFERENCES "shopping_list_item" ("id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "bill" ADD FOREIGN KEY ("bills") REFERENCES "bills" ("id") DEFERRABLE INITIALLY IMMEDIATE;

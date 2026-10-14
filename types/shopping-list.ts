@@ -7,9 +7,9 @@ export enum Unit {
 }
 
 export enum Category {
-  FOOOD = "FOOOD",
+  FOOD = "FOOD",
   DRINK = "DRINK",
-  DIARY = "DIARY",
+  DAIRY = "DAIRY",
   OTHER = "OTHER",
 }
 
