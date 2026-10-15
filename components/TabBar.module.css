@@ -1,0 +1,49 @@
+.bar {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+  background: var(--card);
+  border-top: 1px solid var(--border);
+  z-index: 20;
+}
+
+.tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 0;
+  color: #55524c;
+  text-decoration: none;
+}
+
+.iconWrap {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 30px;
+  border-radius: 999px;
+  transition: background 0.15s;
+}
+
+.label {
+  font-size: 11px;
+}
+
+.active {
+  color: var(--green);
+}
+
+.active .iconWrap {
+  background: var(--green-soft);
+}
+
+.active .label {
+  font-weight: 600;
+}

@@ -1,0 +1,11 @@
+.shell {
+  position: relative;
+  max-width: 480px;
+  min-height: 100dvh;
+  margin: 0 auto;
+  background: var(--bg);
+}
+
+.content {
+  padding: 20px 16px calc(var(--tabbar-h) + 96px + env(safe-area-inset-bottom));
+}
