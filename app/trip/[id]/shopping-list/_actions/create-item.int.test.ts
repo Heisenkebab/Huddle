@@ -1,4 +1,12 @@
 import { createAdminClient } from "@/test/integration/admin-client";
+import {
+  cleanUp,
+  createTestTrip,
+  createTestUser,
+  TEST_PASSWORD,
+  TestUser,
+} from "@/test/integration/fixtures";
+import { signInAs, signOut } from "@/test/integration/session";
 import { Category, ShoppingListItemBody, Unit } from "@/types/shopping-list";
 import { randomUUID } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
@@ -29,51 +37,19 @@ async function getHistory(itemId: string) {
 }
 
 describe("createItem", () => {
-  let userId: string;
-  let profileId: string;
+  let owner: TestUser;
   let tripId: string;
 
-  // A trip needs an owner profile, and a profile needs an auth user
   beforeEach(async () => {
-    profileId = randomUUID();
-    tripId = randomUUID();
-
-    const user = await admin.auth.admin.createUser({
-      email: `${randomUUID()}@huddle.test`,
-      password: "password123",
-      email_confirm: true,
-    });
-    if (user.error) throw user.error;
-    userId = user.data.user.id;
-
-    const profile = await admin
-      .from("profile")
-      .insert({ id: profileId, user_id: userId, name: "Test", color: 0 });
-    if (profile.error) throw profile.error;
-
-    const trip = await admin
-      .from("trip")
-      .insert({ id: tripId, owner_id: profileId });
-    if (trip.error) throw trip.error;
+    owner = await createTestUser();
+    tripId = await createTestTrip(owner);
+    await signInAs(owner.email, TEST_PASSWORD);
   });
 
   afterEach(async () => {
     vi.restoreAllMocks();
-
-    const { data: items } = await admin
-      .from("shopping_list_item")
-      .select("id")
-      .eq("trip_id", tripId);
-    const itemIds = (items ?? []).map((row) => row.id);
-
-    await admin
-      .from("shopping_list_history")
-      .delete()
-      .in("shopping_list_item_id", itemIds);
-    await admin.from("shopping_list_item").delete().in("id", itemIds);
-    await admin.from("trip").delete().eq("id", tripId);
-    // Also deletes the profile through ON DELETE CASCADE
-    await admin.auth.admin.deleteUser(userId);
+    signOut();
+    await cleanUp([tripId], [owner]);
   });
 
   test("creates the item in the trip and returns its id", async () => {
