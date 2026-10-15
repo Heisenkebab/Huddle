@@ -7,6 +7,8 @@ import {
   TestUser,
 } from "@/test/integration/fixtures";
 import { signInAs, signOut } from "@/test/integration/session";
+
+import { getHistory } from "@/test/integration/shopping-list";
 import { Category, ShoppingListItemBody, Unit } from "@/types/shopping-list";
 import { randomUUID } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
@@ -24,16 +26,6 @@ const item: ShoppingListItemBody = {
 // Expected failures log through console.error; silence only those tests
 function silenceErrorLog() {
   vi.spyOn(console, "error").mockImplementation(() => {});
-}
-
-async function getHistory(itemId: string) {
-  const { data, error } = await admin
-    .from("shopping_list_history")
-    .select("shopping_list_item_id, unit, amount, bought_at, removed_at")
-    .eq("shopping_list_item_id", itemId)
-    .order("created_at");
-  if (error) throw error;
-  return data;
 }
 
 describe("createItem", () => {
