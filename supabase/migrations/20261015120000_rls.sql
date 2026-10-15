@@ -119,7 +119,7 @@ CREATE POLICY "owner deletes the trip"
   USING (public.is_trip_owner(id));
 
 -- trip_invite -----------------------------------------------------------------
--- Every member may create or regenerate the link. Joining with a link can't
+-- Only the owner may create or regenerate the link. Joining with a link can't
 -- go through this table (the joiner is no member yet), so that will need a
 -- SECURITY DEFINER function like join_trip(invite_id).
 ALTER TABLE public.trip_invite ENABLE ROW LEVEL SECURITY;
