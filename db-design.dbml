@@ -1,16 +1,24 @@
 Table trip {
   id uuid [pk]
-  invite_link String [unique]
   owner_id uuid [ref: > profile.id]
 
 }
 
-Table profile {
-  user_id uuid [pk, ref: ?- user.id] 
+Table trip_invite {
   id uuid [pk]
-  name String
+  trip_id uuid [ref: > trip.id]
+  invite_id uuid [unique]
+  created_at timestamptz
+  ending_at timestamptz
+}
+
+
+Table profile {
+  id uuid [pk]
+  user_id uuid [unique, ref: - user.id]
+  name text
   color int
-  emoji String
+  emoji text
 }
 
 Table guest_trip {
@@ -18,48 +26,49 @@ Table guest_trip {
   trip_id uuid [ref: > trip.id]
 }
 
-Table grocery_list_history {
+Table shopping_list_history {
   trip_id uuid [pk, ref: > trip.id]
-  valid_from datetime [pk]
-  grocery_list_item_id uuid [pk, ref: > grocery_list_item.id]
-  bought_at datetime
-  removed_at datetime
+  valid_from timestamptz [pk]
+  shopping_list_item_id uuid [pk, ref: > shopping_list_item.id]
+  bought_at timestamptz
+  removed_at timestamptz
   unit Unit
-  amount Decimal
+  amount numeric
 }
 
-Table grocery_list_item {
+Table shopping_list_item {
   id uuid [pk]
   category Category
-  name String
+  name text
 }
 
 Enum Category {
-  FOOOD
+  FOOD
   DRINK
-  DIARY
+  DAIRY
   OTHER
 }
 
 Enum Unit {
-  KILO_GRAMM
-  GRAMM
+  KILOGRAM
+  GRAM
   LITER
+  MILLILITER
   AMOUNT
 }
 
 Table user {
   id uuid [pk, not null]
-  image_url String
+  image_url text
 }
 
 Table bill {
   id uuid [pk]
-  image_url String
+  image_url text
   bills uuid [ref: > bills.id]
 }
 
 Table bills {
   id uuid [pk]
-  
+
 }
