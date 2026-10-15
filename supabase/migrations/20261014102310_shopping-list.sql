@@ -33,15 +33,20 @@ CREATE TABLE "guest_trip" (
 );
 
 CREATE TABLE "shopping_list_history" (
-  "trip_id" uuid,
-  "valid_from" timestamptz,
-  "shopping_list_item_id" uuid,
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "trip_id" uuid NOT NULL,
+  "shopping_list_item_id" uuid NOT NULL,
+  "valid_from" timestamptz NOT NULL DEFAULT now(),
   "bought_at" timestamptz,
   "removed_at" timestamptz,
-  "unit" "Unit",
-  "amount" numeric,
-  PRIMARY KEY ("trip_id", "valid_from", "shopping_list_item_id")
+  "unit" "Unit" NOT NULL,
+  "amount" numeric NOT NULL
 );
+
+-- Only one entry per item and point in time. Column order matches
+-- update_shopping_list_item: filter by trip and item, sort by valid_from.
+CREATE UNIQUE INDEX "shopping_list_history_trip_item_valid_idx"
+  ON "shopping_list_history" ("trip_id", "shopping_list_item_id", "valid_from");
 
 CREATE TABLE "shopping_list_item" (
   "id" uuid PRIMARY KEY,
