@@ -13,72 +13,76 @@ CREATE TYPE "Unit" AS ENUM (
   'AMOUNT'
 );
 
-CREATE TABLE "trip" (
-  "id" uuid PRIMARY KEY,
-  "invite_id" text UNIQUE,
-  "owner_id" uuid
-);
-
-CREATE TABLE "profile" (
-  "id" uuid PRIMARY KEY,
-  "user_id" uuid UNIQUE,
-  "name" text,
-  "color" int,
-  "emoji" text
-);
-
-CREATE TABLE "guest_trip" (
-  "profile_id" uuid,
-  "trip_id" uuid
-);
-
-CREATE TABLE "shopping_list_history" (
-  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  "trip_id" uuid NOT NULL,
-  "shopping_list_item_id" uuid NOT NULL,
-  "valid_from" timestamptz NOT NULL DEFAULT now(),
-  "bought_at" timestamptz,
-  "removed_at" timestamptz,
-  "unit" "Unit" NOT NULL,
-  "amount" numeric NOT NULL
-);
-
--- Only one entry per item and point in time. Column order matches
--- update_shopping_list_item: filter by trip and item, sort by valid_from.
-CREATE UNIQUE INDEX "shopping_list_history_trip_item_valid_idx"
-  ON "shopping_list_history" ("trip_id", "shopping_list_item_id", "valid_from");
-
-CREATE TABLE "shopping_list_item" (
-  "id" uuid PRIMARY KEY,
-  "category" "Category",
-  "name" text
-);
-
 CREATE TABLE "user" (
-  "id" uuid PRIMARY KEY NOT NULL,
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   "image_url" text
 );
 
-CREATE TABLE "bill" (
-  "id" uuid PRIMARY KEY,
-  "image_url" text,
-  "bills" uuid
+CREATE TABLE "profile" (
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "user_id" uuid NOT NULL UNIQUE REFERENCES "user" ("id"),
+  "name" text NOT NULL,
+  "color" int NOT NULL,
+  "emoji" text,
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  "updated_at" timestamptz NOT NULL DEFAULT now()
 );
+
+CREATE TABLE "trip" (
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "owner_id" uuid NOT NULL REFERENCES "profile" ("id")
+);
+
+CREATE TABLE "trip_invite" (
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "trip_id" uuid NOT NULL REFERENCES "trip" ("id"),
+  "invite_id" uuid NOT NULL UNIQUE,
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  "ending_at" timestamptz NOT NULL DEFAULT now() + interval '7 day'
+);
+
+CREATE TABLE "guest_trip" (
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "profile_id" uuid NOT NULL REFERENCES "profile" ("id"),
+  "trip_id" uuid NOT NULL REFERENCES "trip" ("id"),
+  UNIQUE ("profile_id", "trip_id")
+);
+
+CREATE TABLE "shopping_list_item" (
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "category" "Category" NOT NULL,
+  "name" text NOT NULL,
+  "trip_id" uuid NOT NULL REFERENCES "trip" ("id"),
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  "updated_at" timestamptz NOT NULL DEFAULT now()
+);
+
+-- "Milch" and " milch " count as the same item within a trip
+CREATE UNIQUE INDEX "shopping_list_item_trip_name_idx"
+  ON "shopping_list_item" ("trip_id", lower(trim("name")));
+
+CREATE TABLE "shopping_list_history" (
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  "shopping_list_item_id" uuid NOT NULL REFERENCES "shopping_list_item" ("id"),
+  "bought_at" timestamptz,
+  "removed_at" timestamptz,
+  "unit" "Unit" NOT NULL,
+  "amount" numeric NOT NULL,
+  "updated_at" timestamptz NOT NULL DEFAULT now()
+);
+
+-- At most one open (not bought, not removed) entry per item
+CREATE UNIQUE INDEX "shopping_list_history_one_open_idx"
+  ON "shopping_list_history" ("shopping_list_item_id")
+  WHERE "bought_at" IS NULL AND "removed_at" IS NULL;
 
 CREATE TABLE "bills" (
-  "id" uuid PRIMARY KEY
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid()
 );
 
-ALTER TABLE "trip" ADD FOREIGN KEY ("owner_id") REFERENCES "profile" ("id") DEFERRABLE INITIALLY IMMEDIATE;
-
-ALTER TABLE "profile" ADD FOREIGN KEY ("user_id") REFERENCES "user" ("id") DEFERRABLE INITIALLY IMMEDIATE;
-
-ALTER TABLE "guest_trip" ADD FOREIGN KEY ("profile_id") REFERENCES "profile" ("id") DEFERRABLE INITIALLY IMMEDIATE;
-
-ALTER TABLE "guest_trip" ADD FOREIGN KEY ("trip_id") REFERENCES "trip" ("id") DEFERRABLE INITIALLY IMMEDIATE;
-
-ALTER TABLE "shopping_list_history" ADD FOREIGN KEY ("trip_id") REFERENCES "trip" ("id") DEFERRABLE INITIALLY IMMEDIATE;
-
-ALTER TABLE "shopping_list_history" ADD FOREIGN KEY ("shopping_list_item_id") REFERENCES "shopping_list_item" ("id") DEFERRABLE INITIALLY IMMEDIATE;
-
-ALTER TABLE "bill" ADD FOREIGN KEY ("bills") REFERENCES "bills" ("id") DEFERRABLE INITIALLY IMMEDIATE;
+CREATE TABLE "bill" (
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "image_url" text,
+  "bills" uuid REFERENCES "bills" ("id")
+);
