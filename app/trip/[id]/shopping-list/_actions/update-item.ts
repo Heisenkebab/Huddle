@@ -1,13 +1,16 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { ActionResult } from "@/types/action-result";
 import { ShoppingListItemBody } from "@/types/shopping-list";
+
+export type UpdateItemResult = ActionResult;
 
 export async function updateItem(
   item_id: string,
   trip_id: string,
   updateBody: Partial<ShoppingListItemBody>,
-) {
+): Promise<UpdateItemResult> {
   try {
     const supabase = await createClient();
     const { error } = await supabase.rpc("update_shopping_list_item", {
@@ -21,8 +24,9 @@ export async function updateItem(
     if (error) {
       throw new Error(error.message);
     }
+    return { success: true, data: undefined };
   } catch (error) {
     console.error("updateItem failed:", error);
-    throw new Error("Failed to update item");
+    return { success: false, error: "Failed to update item" };
   }
 }
