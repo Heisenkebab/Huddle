@@ -17,7 +17,10 @@ export function parseNumber(text: string): number | null {
 }
 
 /** 2 + "l" → "2 l" */
-export function formatQuantity(quantity: number | null, unit: string | null): string {
+export function formatQuantity(
+  quantity: number | null,
+  unit: string | null,
+): string {
   if (quantity == null) return unit ?? "";
   return unit ? `${formatNumber(quantity)} ${unit}` : formatNumber(quantity);
 }
@@ -29,7 +32,10 @@ export function formatAddedAt(iso: string): string {
     .toLocaleDateString("de-DE", { weekday: "short" })
     .replace(".", "");
   const month = d.toLocaleDateString("de-DE", { month: "long" });
-  const time = d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+  const time = d.toLocaleTimeString("de-DE", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
   return `${weekday}, ${d.getDate()}. ${month}, ${time}`;
 }
 
@@ -48,7 +54,10 @@ export function stepForUnit(unit: string | null): number {
 }
 
 /** "2026-06-12", "2026-06-14" → "12.–14. Juni" */
-export function formatTripDates(start: string | null, end: string | null): string {
+export function formatTripDates(
+  start: string | null,
+  end: string | null,
+): string {
   if (!start) return "";
   const s = new Date(`${start}T00:00:00`);
   const month = (d: Date) => d.toLocaleDateString("de-DE", { month: "long" });

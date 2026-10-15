@@ -2,8 +2,18 @@
 
 import { useState, type ComponentType, type ReactNode } from "react";
 import { Check, Info, Minus, Plus, Tag, Trash2, X } from "lucide-react";
-import { formatAddedAt, formatNumber, parseNumber, stepForUnit } from "@/lib/format";
-import { CATEGORIES, UNITS, type ShoppingItem, type ShoppingItemInput } from "@/lib/types";
+import {
+  formatAddedAt,
+  formatNumber,
+  parseNumber,
+  stepForUnit,
+} from "@/lib/format";
+import {
+  CATEGORIES,
+  UNITS,
+  type ShoppingItem,
+  type ShoppingItemInput,
+} from "@/lib/types";
 import { DESKTOP_QUERY, useMediaQuery } from "@/lib/use-media-query";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -26,7 +36,8 @@ import { Label } from "@/components/ui/label";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import PersonAvatar from "./PersonAvatar";
 
-export type EditorTarget = { mode: "add" } | { mode: "edit"; item: ShoppingItem };
+export type EditorTarget =
+  { mode: "add" } | { mode: "edit"; item: ShoppingItem };
 
 type Props = {
   open: boolean;
@@ -43,8 +54,17 @@ export default function ItemEditor(props: Props) {
   if (isDesktop) {
     return (
       <Dialog open={props.open} onOpenChange={props.onOpenChange}>
-        <DialogContent showCloseButton={false} className="max-w-[520px] gap-0 rounded-[28px] border-0 bg-card p-6 shadow-2xl sm:max-w-[520px]">
-          <ItemForm {...props} layout="dialog" Title={DialogTitle} Description={DialogDescription} Close={DialogClose} />
+        <DialogContent
+          showCloseButton={false}
+          className="max-w-[520px] gap-0 rounded-[28px] border-0 bg-card p-6 shadow-2xl sm:max-w-[520px]"
+        >
+          <ItemForm
+            {...props}
+            layout="dialog"
+            Title={DialogTitle}
+            Description={DialogDescription}
+            Close={DialogClose}
+          />
         </DialogContent>
       </Dialog>
     );
@@ -53,7 +73,13 @@ export default function ItemEditor(props: Props) {
   return (
     <Drawer open={props.open} onOpenChange={props.onOpenChange}>
       <DrawerContent className="mx-auto max-h-[92dvh] max-w-[480px] rounded-t-[28px] border-0 bg-card [&>div:first-child]:mt-2.5 [&>div:first-child]:h-1 [&>div:first-child]:w-10">
-        <ItemForm {...props} layout="sheet" Title={DrawerTitle} Description={DrawerDescription} Close={DrawerClose} />
+        <ItemForm
+          {...props}
+          layout="sheet"
+          Title={DrawerTitle}
+          Description={DrawerDescription}
+          Close={DrawerClose}
+        />
       </DrawerContent>
     </Drawer>
   );
@@ -69,27 +95,43 @@ type FormProps = Props & {
   Close: ComponentType<{ asChild?: boolean; children: ReactNode }>;
 };
 
-function ItemForm({ target, onSave, onDelete, layout, Title, Description, Close }: FormProps) {
+function ItemForm({
+  target,
+  onSave,
+  onDelete,
+  layout,
+  Title,
+  Description,
+  Close,
+}: FormProps) {
   const item = target.mode === "edit" ? target.item : undefined;
   const isDialog = layout === "dialog";
 
   const [name, setName] = useState(item?.name ?? "");
-  const [qtyText, setQtyText] = useState(item?.quantity != null ? formatNumber(item.quantity) : "1");
+  const [qtyText, setQtyText] = useState(
+    item?.quantity != null ? formatNumber(item.quantity) : "1",
+  );
   const [unit, setUnit] = useState<string | null>(item ? item.unit : "Stück");
-  const [category, setCategory] = useState<string | null>(item?.category ?? null);
+  const [category, setCategory] = useState<string | null>(
+    item?.category ?? null,
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Eigene Einheiten aus bestehenden Artikeln (z. B. "Kisten") zusätzlich anzeigen
   const unitOptions: string[] = [...UNITS];
-  if (item?.unit && !unitOptions.includes(item.unit)) unitOptions.push(item.unit);
+  if (item?.unit && !unitOptions.includes(item.unit))
+    unitOptions.push(item.unit);
 
   const qty = parseNumber(qtyText);
   const qtyInvalid = qtyText.trim() !== "" && qty === null;
 
   const stepQty = (dir: 1 | -1) => {
     const step = stepForUnit(unit);
-    const next = Math.max(step, Math.round(((qty ?? 0) + dir * step) * 1000) / 1000);
+    const next = Math.max(
+      step,
+      Math.round(((qty ?? 0) + dir * step) * 1000) / 1000,
+    );
     setQtyText(formatNumber(next));
   };
 
@@ -101,10 +143,18 @@ function ItemForm({ target, onSave, onDelete, layout, Title, Description, Close 
     setSaving(true);
     setError(null);
     try {
-      await onSave({ name: trimmed, quantity: qty, unit: qty == null ? null : unit, category });
+      await onSave({
+        name: trimmed,
+        quantity: qty,
+        unit: qty == null ? null : unit,
+        category,
+      });
     } catch (err) {
       const message =
-        err && typeof err === "object" && "message" in err && typeof err.message === "string"
+        err &&
+        typeof err === "object" &&
+        "message" in err &&
+        typeof err.message === "string"
           ? err.message
           : "Bitte versuche es erneut.";
       setError(`Speichern fehlgeschlagen: ${message}`);
@@ -133,32 +183,58 @@ function ItemForm({ target, onSave, onDelete, layout, Title, Description, Close 
     <form
       onSubmit={submit}
       noValidate
-      className={cn(!isDialog && "overflow-y-auto px-5 pb-[calc(20px+env(safe-area-inset-bottom))]")}
+      className={cn(
+        !isDialog &&
+          "overflow-y-auto px-5 pb-[calc(20px+env(safe-area-inset-bottom))]",
+      )}
     >
       {/* Kopf */}
-      <div className={cn("flex items-start justify-between gap-3", isDialog ? "mb-1" : "pt-3 pb-1")}>
+      <div
+        className={cn(
+          "flex items-start justify-between gap-3",
+          isDialog ? "mb-1" : "pt-3 pb-1",
+        )}
+      >
         <div className="flex flex-col gap-1 text-left">
           <Title className="text-[19px] leading-tight font-bold">
-            {target.mode === "add" ? "Artikel hinzufügen" : "Artikel bearbeiten"}
+            {target.mode === "add"
+              ? "Artikel hinzufügen"
+              : "Artikel bearbeiten"}
           </Title>
           {item ? (
             <Description className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-              <PersonAvatar name={item.added_by_name} color={item.added_by_color} size={14} />
-              Hinzugefügt von {item.added_by_name} · {formatAddedAt(item.created_at)}
+              <PersonAvatar
+                name={item.added_by_name}
+                color={item.added_by_color}
+                size={14}
+              />
+              Hinzugefügt von {item.added_by_name} ·{" "}
+              {formatAddedAt(item.created_at)}
             </Description>
           ) : (
-            <Description className="sr-only">Neuen Artikel zur Einkaufsliste hinzufügen</Description>
+            <Description className="sr-only">
+              Neuen Artikel zur Einkaufsliste hinzufügen
+            </Description>
           )}
         </div>
         <Close asChild>
-          <Button type="button" variant="outline" size="icon" className="rounded-full bg-card" aria-label="Schließen">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="rounded-full bg-card"
+            aria-label="Schließen"
+          >
             <X />
           </Button>
         </Close>
       </div>
 
       {/* Artikel */}
-      <Label htmlFor="item-name" className="mt-4 mb-2 text-[13px] font-semibold">
+      <Label
+        htmlFor="item-name"
+        className="mt-4 mb-2 text-[13px] font-semibold"
+      >
         Artikel
       </Label>
       <div className="relative">
@@ -181,8 +257,19 @@ function ItemForm({ target, onSave, onDelete, layout, Title, Description, Close 
         Menge
       </Label>
       <div className={cn(isDialog && "flex flex-wrap items-center gap-3")}>
-        <div role="group" aria-labelledby="qty-label" className="inline-flex items-center gap-1 rounded-2xl bg-muted p-1">
-          <Button type="button" variant="ghost" size="icon-sm" className="rounded-xl bg-card" onClick={() => stepQty(-1)} aria-label="Weniger">
+        <div
+          role="group"
+          aria-labelledby="qty-label"
+          className="inline-flex items-center gap-1 rounded-2xl bg-muted p-1"
+        >
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            className="rounded-xl bg-card"
+            onClick={() => stepQty(-1)}
+            aria-label="Weniger"
+          >
             <Minus />
           </Button>
           <Input
@@ -193,7 +280,13 @@ function ItemForm({ target, onSave, onDelete, layout, Title, Description, Close 
             aria-invalid={qtyInvalid}
             className="h-9 w-[72px] rounded-xl border-[1.5px] border-primary bg-card text-center text-base font-bold md:text-base"
           />
-          <Button type="button" size="icon-sm" className="rounded-xl" onClick={() => stepQty(1)} aria-label="Mehr">
+          <Button
+            type="button"
+            size="icon-sm"
+            className="rounded-xl"
+            onClick={() => stepQty(1)}
+            aria-label="Mehr"
+          >
             <Plus />
           </Button>
         </div>
@@ -241,7 +334,11 @@ function ItemForm({ target, onSave, onDelete, layout, Title, Description, Close 
         )}
         {isDialog && (
           <Close asChild>
-            <Button type="button" variant="outline" className="ml-auto h-10 rounded-full bg-card px-5 font-semibold">
+            <Button
+              type="button"
+              variant="outline"
+              className="ml-auto h-10 rounded-full bg-card px-5 font-semibold"
+            >
               Abbrechen
             </Button>
           </Close>
@@ -249,7 +346,11 @@ function ItemForm({ target, onSave, onDelete, layout, Title, Description, Close 
         <Button
           type="submit"
           disabled={saving}
-          className={cn("rounded-full font-semibold", isDialog ? "h-10 px-5" : "h-12 flex-1 text-[15px]", isDialog && !onDelete && "")}
+          className={cn(
+            "rounded-full font-semibold",
+            isDialog ? "h-10 px-5" : "h-12 flex-1 text-[15px]",
+            isDialog && !onDelete && "",
+          )}
         >
           <Check className="size-4" strokeWidth={2.4} />
           {saving ? "Speichert …" : "Speichern"}

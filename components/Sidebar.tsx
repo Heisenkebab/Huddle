@@ -21,7 +21,12 @@ export default function Sidebar() {
 
   const tripName = trip?.name || "Reise";
   const dates = trip ? formatTripDates(trip.start_date, trip.end_date) : "";
-  const meta = [dates, `${people.length} ${people.length === 1 ? "Person" : "Personen"}`].filter(Boolean).join(" · ");
+  const meta = [
+    dates,
+    `${people.length} ${people.length === 1 ? "Person" : "Personen"}`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   const copyInvite = async () => {
     const ok = await copyText(`${window.location.origin}/trip/${tripId}`);
@@ -29,7 +34,7 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="sticky top-0 hidden h-dvh w-(--sidebar-width) shrink-0 flex-col border-r bg-card/70 dark:bg-[#1f1f1f] px-4 py-6 lg:flex">
+    <aside className="sticky top-0 hidden h-dvh w-(--sidebar-width) shrink-0 flex-col border-r bg-card/70 px-4 py-6 lg:flex dark:bg-[#1f1f1f]">
       <div className="mb-6 flex items-center gap-3 px-1">
         <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-primary text-lg font-bold text-primary-foreground">
           {tripName.charAt(0).toUpperCase()}
@@ -51,7 +56,9 @@ export default function Sidebar() {
               aria-current={active ? "page" : undefined}
               className={cn(
                 "flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm text-foreground/80 transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
-                active ? "bg-secondary font-semibold text-secondary-foreground" : "hover:bg-muted",
+                active
+                  ? "bg-secondary font-semibold text-secondary-foreground"
+                  : "hover:bg-muted",
               )}
             >
               <Icon className="size-[18px]" strokeWidth={1.8} />
@@ -67,20 +74,28 @@ export default function Sidebar() {
         </p>
         <ul className="mb-6 flex max-h-[40dvh] flex-col gap-1 overflow-y-auto">
           {people.map((p) => (
-            <li key={p.key} className="flex items-center gap-2.5 rounded-xl px-1 py-1 text-sm">
+            <li
+              key={p.key}
+              className="flex items-center gap-2.5 rounded-xl px-1 py-1 text-sm"
+            >
               <PersonAvatar name={p.name} color={p.color} size={22} />
               <span className="flex-1 truncate">
                 {p.name}
                 {p.isMe && <span className="text-muted-foreground"> (du)</span>}
               </span>
               <span
-                className={cn("size-1.5 rounded-full", p.online ? "bg-emerald-500" : "bg-border")}
+                className={cn(
+                  "size-1.5 rounded-full",
+                  p.online ? "bg-emerald-500" : "bg-border",
+                )}
                 aria-label={p.online ? "online" : "offline"}
               />
             </li>
           ))}
         </ul>
-        <p className="mb-2 px-1 text-[11px] font-bold tracking-[0.08em] text-muted-foreground uppercase">Darstellung</p>
+        <p className="mb-2 px-1 text-[11px] font-bold tracking-[0.08em] text-muted-foreground uppercase">
+          Darstellung
+        </p>
         <ThemeSegmented className="mb-5" />
         <Button
           variant="outline"

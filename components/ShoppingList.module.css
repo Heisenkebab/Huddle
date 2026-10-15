@@ -103,7 +103,9 @@
   border: 1.5px solid #c9c4ba;
   border-radius: 6px;
   color: #fff;
-  transition: background 0.12s, border-color 0.12s;
+  transition:
+    background 0.12s,
+    border-color 0.12s;
 }
 
 .rowText {

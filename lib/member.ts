@@ -5,7 +5,14 @@ import { useEffect, useState } from "react";
 export type Member = { id: string; name: string; color: string };
 
 const STORAGE_KEY = "huddle.member";
-const AVATAR_COLORS = ["#E0A526", "#B65FB8", "#1E7461", "#EF6B4A", "#5B7BD5", "#3C9BB5"];
+const AVATAR_COLORS = [
+  "#E0A526",
+  "#B65FB8",
+  "#1E7461",
+  "#EF6B4A",
+  "#5B7BD5",
+  "#3C9BB5",
+];
 
 function colorFor(name: string): string {
   let hash = 0;
@@ -25,7 +32,11 @@ function randomId(): string {
  * der Beitritt per Link mit Namenseingabe folgt in der Story "Reisezugang".
  */
 export function useMember(): Member {
-  const [member, setMember] = useState<Member>({ id: "ssr", name: "Gast", color: AVATAR_COLORS[0] });
+  const [member, setMember] = useState<Member>({
+    id: "ssr",
+    name: "Gast",
+    color: AVATAR_COLORS[0],
+  });
 
   useEffect(() => {
     try {
@@ -33,11 +44,19 @@ export function useMember(): Member {
       if (raw) {
         const parsed = JSON.parse(raw) as Partial<Member>;
         if (parsed.name && parsed.id) {
-          setMember({ id: parsed.id, name: parsed.name, color: parsed.color ?? colorFor(parsed.name) });
+          setMember({
+            id: parsed.id,
+            name: parsed.name,
+            color: parsed.color ?? colorFor(parsed.name),
+          });
           return;
         }
       }
-      const fresh: Member = { id: randomId(), name: "Gast", color: colorFor("Gast") };
+      const fresh: Member = {
+        id: randomId(),
+        name: "Gast",
+        color: colorFor("Gast"),
+      };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(fresh));
       setMember(fresh);
     } catch {

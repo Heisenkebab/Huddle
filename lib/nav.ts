@@ -1,4 +1,10 @@
-import { ArrowLeftRight, LayoutGrid, ListChecks, Receipt, ShoppingCart } from "lucide-react";
+import {
+  ArrowLeftRight,
+  LayoutGrid,
+  ListChecks,
+  Receipt,
+  ShoppingCart,
+} from "lucide-react";
 
 export const NAV_ITEMS = [
   { section: "shopping-list", label: "Einkauf", Icon: ShoppingCart },

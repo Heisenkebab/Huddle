@@ -4,7 +4,11 @@ import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import { Monitor, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 const MODES = [
@@ -18,7 +22,12 @@ export function ThemeToggleButton({ className }: { className?: string }) {
   const { theme, setTheme } = useTheme();
   const mounted = useMounted();
   // Vor dem Mounten ist das gespeicherte Theme unbekannt → Server und Browser rendern identisch ("System")
-  const index = mounted ? Math.max(0, MODES.findIndex((m) => m.value === theme)) : 0;
+  const index = mounted
+    ? Math.max(
+        0,
+        MODES.findIndex((m) => m.value === theme),
+      )
+    : 0;
   const current = MODES[index];
   const next = MODES[(index + 1) % MODES.length];
 
@@ -36,7 +45,9 @@ export function ThemeToggleButton({ className }: { className?: string }) {
           <current.Icon />
         </Button>
       </TooltipTrigger>
-      <TooltipContent sideOffset={6}>Darstellung: {current.label}</TooltipContent>
+      <TooltipContent sideOffset={6}>
+        Darstellung: {current.label}
+      </TooltipContent>
     </Tooltip>
   );
 }
@@ -45,13 +56,21 @@ export function ThemeToggleButton({ className }: { className?: string }) {
 export function ThemeSegmented({ className }: { className?: string }) {
   const { theme, setTheme } = useTheme();
   const mounted = useMounted();
-  const index = mounted ? Math.max(0, MODES.findIndex((m) => m.value === theme)) : -1;
+  const index = mounted
+    ? Math.max(
+        0,
+        MODES.findIndex((m) => m.value === theme),
+      )
+    : -1;
 
   return (
     <div
       role="radiogroup"
       aria-label="Darstellung"
-      className={cn("relative grid grid-cols-3 rounded-full border bg-muted p-1", className)}
+      className={cn(
+        "relative grid grid-cols-3 rounded-full border bg-muted p-1",
+        className,
+      )}
     >
       {/* Gleitender Schalter hinter dem aktiven Eintrag */}
       <span

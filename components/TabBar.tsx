@@ -27,7 +27,9 @@ export default function TabBar() {
             aria-current={active ? "page" : undefined}
             className={cn(
               "flex flex-col items-center gap-0.5 rounded-full py-1.5 text-[10.5px] text-foreground/70 transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
-              active ? "bg-secondary font-semibold text-primary" : "hover:bg-muted",
+              active
+                ? "bg-secondary font-semibold text-primary"
+                : "hover:bg-muted",
             )}
           >
             <Icon className="size-5" strokeWidth={1.8} />

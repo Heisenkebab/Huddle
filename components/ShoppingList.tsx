@@ -10,11 +10,19 @@ import { formatQuantity } from "@/lib/format";
 import { copyText } from "@/lib/clipboard";
 import { showInfoToast, showUndoToast } from "@/lib/toasts";
 import { cn } from "@/lib/utils";
-import { CATEGORY_ORDER, type ShoppingItem, type ShoppingItemInput } from "@/lib/types";
+import {
+  CATEGORY_ORDER,
+  type ShoppingItem,
+  type ShoppingItemInput,
+} from "@/lib/types";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import ItemEditor, { type EditorTarget } from "./ItemEditor";
 import PageHeader from "./PageHeader";
 import PersonAvatar from "./PersonAvatar";
@@ -34,7 +42,10 @@ export default function ShoppingList() {
   const [items, setItems] = useState<ShoppingItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [editorOpen, setEditorOpen] = useState(false);
-  const [editor, setEditor] = useState<EditorTarget & { key: number }>({ mode: "add", key: 0 });
+  const [editor, setEditor] = useState<EditorTarget & { key: number }>({
+    mode: "add",
+    key: 0,
+  });
 
   const openEditor = (target: EditorTarget) => {
     toast.dismiss(); // offene Toasts nicht über dem Popup stehen lassen
@@ -61,7 +72,8 @@ export default function ShoppingList() {
         if (error) throw error;
         setItems(data as ShoppingItem[]);
       } catch (e) {
-        if (!cancelled) enterLocalMode(errorMessage(e, "Liste konnte nicht geladen werden."));
+        if (!cancelled)
+          enterLocalMode(errorMessage(e, "Liste konnte nicht geladen werden."));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -85,7 +97,12 @@ export default function ShoppingList() {
       .channel(`items:${tripId}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "shopping_items", filter: `trip_id=eq.${tripId}` },
+        {
+          event: "*",
+          schema: "public",
+          table: "shopping_items",
+          filter: `trip_id=eq.${tripId}`,
+        },
         (payload: RealtimePostgresChangesPayload<ShoppingItem>) => {
           setItems((prev) => {
             if (payload.eventType === "INSERT") {
@@ -112,17 +129,30 @@ export default function ShoppingList() {
 
   /* Autor:innen an die Sidebar ("Mitreisende") melden */
   useEffect(() => {
-    setAuthors(items.map((i) => ({ name: i.added_by_name, color: i.added_by_color })));
+    setAuthors(
+      items.map((i) => ({ name: i.added_by_name, color: i.added_by_color })),
+    );
   }, [items, setAuthors]);
 
   /* ---------- Aktionen ---------- */
   const togglePurchased = async (item: ShoppingItem, next: boolean) => {
-    setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, purchased: next } : i)));
+    setItems((prev) =>
+      prev.map((i) => (i.id === item.id ? { ...i, purchased: next } : i)),
+    );
     if (localMode) return;
-    const { error } = await getSupabase().from("shopping_items").update({ purchased: next }).eq("id", item.id);
+    const { error } = await getSupabase()
+      .from("shopping_items")
+      .update({ purchased: next })
+      .eq("id", item.id);
     if (error) {
-      setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, purchased: item.purchased } : i)));
-      toast.error("Änderung konnte nicht gespeichert werden.", { description: error.message });
+      setItems((prev) =>
+        prev.map((i) =>
+          i.id === item.id ? { ...i, purchased: item.purchased } : i,
+        ),
+      );
+      toast.error("Änderung konnte nicht gespeichert werden.", {
+        description: error.message,
+      });
     }
   };
 
@@ -143,17 +173,26 @@ export default function ShoppingList() {
     }
     const { data, error } = await getSupabase()
       .from("shopping_items")
-      .insert({ ...values, trip_id: tripId, added_by_name: member.name, added_by_color: member.color })
+      .insert({
+        ...values,
+        trip_id: tripId,
+        added_by_name: member.name,
+        added_by_color: member.color,
+      })
       .select()
       .single();
     if (error) throw error;
     const row = data as ShoppingItem;
-    setItems((prev) => (prev.some((i) => i.id === row.id) ? prev : [...prev, row]));
+    setItems((prev) =>
+      prev.some((i) => i.id === row.id) ? prev : [...prev, row],
+    );
   };
 
   const updateItem = async (id: string, values: ShoppingItemInput) => {
     if (localMode) {
-      setItems((prev) => prev.map((i) => (i.id === id ? { ...i, ...values } : i)));
+      setItems((prev) =>
+        prev.map((i) => (i.id === id ? { ...i, ...values } : i)),
+      );
       return;
     }
     const { data, error } = await getSupabase()
@@ -169,23 +208,35 @@ export default function ShoppingList() {
 
   const deleteItem = async (item: ShoppingItem) => {
     setItems((prev) => prev.filter((i) => i.id !== item.id));
-    const restoreLocal = () => setItems((prev) => (prev.some((i) => i.id === item.id) ? prev : [...prev, item]));
+    const restoreLocal = () =>
+      setItems((prev) =>
+        prev.some((i) => i.id === item.id) ? prev : [...prev, item],
+      );
     const message = `„${item.name}“ gelöscht`;
 
     if (localMode) {
       showUndoToast(message, restoreLocal);
       return;
     }
-    const { error } = await getSupabase().from("shopping_items").delete().eq("id", item.id);
+    const { error } = await getSupabase()
+      .from("shopping_items")
+      .delete()
+      .eq("id", item.id);
     if (error) {
       restoreLocal();
-      toast.error("Artikel konnte nicht gelöscht werden.", { description: error.message });
+      toast.error("Artikel konnte nicht gelöscht werden.", {
+        description: error.message,
+      });
       return;
     }
     showUndoToast(message, async () => {
-      const { error: restoreError } = await getSupabase().from("shopping_items").insert(item);
+      const { error: restoreError } = await getSupabase()
+        .from("shopping_items")
+        .insert(item);
       if (restoreError) {
-        toast.error("Wiederherstellen fehlgeschlagen.", { description: restoreError.message });
+        toast.error("Wiederherstellen fehlgeschlagen.", {
+          description: restoreError.message,
+        });
         return;
       }
       restoreLocal();
@@ -195,18 +246,24 @@ export default function ShoppingList() {
   /* ---------- Gruppierung nach Kategorie ---------- */
   const groups = useMemo(() => {
     const map = new Map<string, ShoppingItem[]>();
-    for (const item of [...items].sort((a, b) => a.created_at.localeCompare(b.created_at))) {
+    for (const item of [...items].sort((a, b) =>
+      a.created_at.localeCompare(b.created_at),
+    )) {
       const key = item.category ?? "Sonstiges";
       map.set(key, [...(map.get(key) ?? []), item]);
     }
-    return [...map.entries()].sort(([a], [b]) => rank(a) - rank(b) || a.localeCompare(b, "de"));
+    return [...map.entries()].sort(
+      ([a], [b]) => rank(a) - rank(b) || a.localeCompare(b, "de"),
+    );
   }, [items]);
 
   const openCount = items.filter((i) => !i.purchased).length;
 
   /* ---------- WhatsApp-Brücke: offene Artikel als Klartext ---------- */
   const copyForWhatsApp = async () => {
-    const lines = [`🛒 *Einkaufsliste${trip.trip?.name ? ` – ${trip.trip.name}` : ""}*`];
+    const lines = [
+      `🛒 *Einkaufsliste${trip.trip?.name ? ` – ${trip.trip.name}` : ""}*`,
+    ];
     for (const [category, list] of groups) {
       const open = list.filter((i) => !i.purchased);
       if (open.length === 0) continue;
@@ -218,7 +275,10 @@ export default function ShoppingList() {
     }
     if (openCount === 0) lines.push("", "Alles erledigt ✅");
     const ok = await copyText(lines.join("\n"));
-    showInfoToast(ok ? "Liste für WhatsApp kopiert" : "Kopieren nicht möglich", <Copy />);
+    showInfoToast(
+      ok ? "Liste für WhatsApp kopiert" : "Kopieren nicht möglich",
+      <Copy />,
+    );
   };
 
   const busy = trip.loading || loading;
@@ -233,22 +293,31 @@ export default function ShoppingList() {
           <AlertTitle>Vorschaumodus</AlertTitle>
           <AlertDescription>
             <p>{trip.error}</p>
-            <p>Du kannst Artikel trotzdem hinzufügen – sie werden nur lokal angezeigt und nicht gespeichert.</p>
+            <p>
+              Du kannst Artikel trotzdem hinzufügen – sie werden nur lokal
+              angezeigt und nicht gespeichert.
+            </p>
           </AlertDescription>
         </Alert>
       )}
 
       {/* Laptop: alles in einer Karte (Entwurf LE1) */}
-      <section className="lg:rounded-[28px] lg:border lg:bg-card/60 lg:p-6 dark:lg:bg-[#232323] lg:shadow-[0_1px_2px_rgb(30_28_24/0.04)]">
+      <section className="lg:rounded-[28px] lg:border lg:bg-card/60 lg:p-6 lg:shadow-[0_1px_2px_rgb(30_28_24/0.04)] dark:lg:bg-[#232323]">
         <div className="mb-5 hidden items-center gap-3 lg:flex">
           <span className="grid size-11 place-items-center rounded-2xl bg-secondary text-primary">
             <ShoppingCart className="size-5" strokeWidth={1.8} />
           </span>
           <div className="mr-auto">
             <h2 className="text-lg font-bold">Einkaufsliste</h2>
-            <p className="text-xs text-muted-foreground">{openCount} offen · Antippen = gekauft</p>
+            <p className="text-xs text-muted-foreground">
+              {openCount} offen · Antippen = gekauft
+            </p>
           </div>
-          <Button variant="outline" onClick={copyForWhatsApp} className="rounded-full bg-card">
+          <Button
+            variant="outline"
+            onClick={copyForWhatsApp}
+            className="rounded-full bg-card"
+          >
             <Copy />
             Für WhatsApp kopieren
           </Button>
@@ -262,7 +331,11 @@ export default function ShoppingList() {
           </Button>
         </div>
 
-        {busy && <p className="py-6 text-center text-sm text-muted-foreground">Lade Einkaufsliste …</p>}
+        {busy && (
+          <p className="py-6 text-center text-sm text-muted-foreground">
+            Lade Einkaufsliste …
+          </p>
+        )}
 
         {!busy && items.length === 0 && (
           <p className="py-6 text-center text-sm text-muted-foreground">
@@ -375,7 +448,13 @@ function ItemRow({
         }}
         onPointerMove={(e) => {
           if (!start.current) return;
-          if (Math.hypot(e.clientX - start.current.x, e.clientY - start.current.y) > 10) clear();
+          if (
+            Math.hypot(
+              e.clientX - start.current.x,
+              e.clientY - start.current.y,
+            ) > 10
+          )
+            clear();
         }}
         onPointerUp={clear}
         onPointerLeave={clear}
@@ -401,11 +480,21 @@ function ItemRow({
           className="pointer-events-none size-[22px] rounded-[7px] border-[1.5px] border-[#c9c4ba] shadow-none dark:border-[#6b6b6b] [&_svg]:size-4"
         />
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className={cn("text-[15px] font-medium", item.purchased && "text-muted-foreground/60 line-through")}>
+          <span
+            className={cn(
+              "text-[15px] font-medium",
+              item.purchased && "text-muted-foreground/60 line-through",
+            )}
+          >
             {item.name}
           </span>
           {(item.quantity != null || item.unit) && (
-            <span className={cn("text-xs text-muted-foreground", item.purchased && "opacity-50")}>
+            <span
+              className={cn(
+                "text-xs text-muted-foreground",
+                item.purchased && "opacity-50",
+              )}
+            >
               {formatQuantity(item.quantity, item.unit)}
             </span>
           )}
@@ -413,7 +502,7 @@ function ItemRow({
 
         {/* Laptop: Bearbeiten/Löschen beim Hovern (Entwurf LE1) */}
         <span
-          className="hidden items-center gap-1.5 opacity-0 transition-opacity group-has-[:focus-visible]/row:opacity-100 group-hover/row:opacity-100 lg:flex"
+          className="hidden items-center gap-1.5 opacity-0 transition-opacity group-hover/row:opacity-100 group-has-[:focus-visible]/row:opacity-100 lg:flex"
           onPointerDown={(e) => e.stopPropagation()}
         >
           <Tooltip>

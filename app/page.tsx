@@ -10,9 +10,18 @@ export default function Home() {
   if (demoTrip) redirect(`/trip/${demoTrip}/shopping-list`);
 
   return (
-    <main style={{ maxWidth: 480, margin: "0 auto", padding: "64px 24px", textAlign: "center" }}>
+    <main
+      style={{
+        maxWidth: 480,
+        margin: "0 auto",
+        padding: "64px 24px",
+        textAlign: "center",
+      }}
+    >
       <h1 style={{ fontSize: 28, margin: "0 0 8px" }}>Huddle</h1>
-      <p style={{ color: "var(--muted)", margin: 0 }}>Öffne deine Reise über den Einladungslink.</p>
+      <p style={{ color: "var(--muted)", margin: 0 }}>
+        Öffne deine Reise über den Einladungslink.
+      </p>
     </main>
   );
 }

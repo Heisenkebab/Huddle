@@ -16,7 +16,8 @@ export function getSupabase(): SupabaseClient {
   return client;
 }
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Reise-IDs sind UUIDs (schwer zu erraten, da der Link ohne Passwort funktioniert). */
 export function isTripId(id: string | undefined): id is string {

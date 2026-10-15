@@ -14,7 +14,13 @@ export default function ErrorNotice({
   className?: string;
 }) {
   return (
-    <Card role="status" className={cn("gap-0 rounded-3xl py-10 shadow-none dark:shadow-[0_4px_20px_rgb(0_0_0/0.6)]", className)}>
+    <Card
+      role="status"
+      className={cn(
+        "gap-0 rounded-3xl py-10 shadow-none dark:shadow-[0_4px_20px_rgb(0_0_0/0.6)]",
+        className,
+      )}
+    >
       <CardContent className="flex flex-col items-center gap-1.5 text-center">
         <span className="mb-2 grid size-14 place-items-center rounded-full bg-secondary text-primary">
           <Coffee className="size-7" strokeWidth={1.8} />

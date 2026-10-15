@@ -11,9 +11,13 @@ export default function PageHeader({ title }: { title: string }) {
 
   return (
     <header className="mb-[18px] lg:mb-7">
-      <p className="mb-1 min-h-[1lh] text-[13px] text-foreground/70">{trip?.name}</p>
+      <p className="mb-1 min-h-[1lh] text-[13px] text-foreground/70">
+        {trip?.name}
+      </p>
       <div className="flex items-center justify-between gap-3">
-        <h1 className="text-[30px] leading-tight font-extrabold tracking-tight lg:text-[34px]">{title}</h1>
+        <h1 className="text-[30px] leading-tight font-extrabold tracking-tight lg:text-[34px]">
+          {title}
+        </h1>
         <div className="flex items-center gap-2.5">
           <div className="hidden -space-x-1.5 lg:flex">
             {online.map((p) => (
@@ -27,7 +31,10 @@ export default function PageHeader({ title }: { title: string }) {
               />
             ))}
           </div>
-          <Badge variant="secondary" className="gap-1.5 rounded-full px-2.5 py-1 font-semibold text-primary">
+          <Badge
+            variant="secondary"
+            className="gap-1.5 rounded-full px-2.5 py-1 font-semibold text-primary"
+          >
             <span className="size-1.5 rounded-full bg-primary" />
             {onlineCount} online
           </Badge>

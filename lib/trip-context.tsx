@@ -5,7 +5,8 @@ import { getSupabase, isTripId } from "@/lib/supabase";
 import { useMember, type Member } from "@/lib/member";
 import type { Person, Trip } from "@/lib/types";
 
-export const NOT_FOUND = "Reise nicht gefunden. Bitte prüfe den Einladungslink.";
+export const NOT_FOUND =
+  "Reise nicht gefunden. Bitte prüfe den Einladungslink.";
 
 type Author = { name: string; color: string };
 
@@ -29,23 +30,40 @@ const TripContext = createContext<TripContextValue | null>(null);
 
 export function useTrip() {
   const ctx = useContext(TripContext);
-  if (!ctx) throw new Error("useTrip muss innerhalb von <TripProvider> verwendet werden");
+  if (!ctx)
+    throw new Error(
+      "useTrip muss innerhalb von <TripProvider> verwendet werden",
+    );
   return ctx;
 }
 
 export function errorMessage(e: unknown, fallback: string) {
   if (e instanceof Error && e.message) return e.message;
-  if (e && typeof e === "object" && "message" in e && typeof e.message === "string") return e.message;
+  if (
+    e &&
+    typeof e === "object" &&
+    "message" in e &&
+    typeof e.message === "string"
+  )
+    return e.message;
   return fallback;
 }
 
-export function TripProvider({ tripId, children }: { tripId: string; children: React.ReactNode }) {
+export function TripProvider({
+  tripId,
+  children,
+}: {
+  tripId: string;
+  children: React.ReactNode;
+}) {
   const member = useMember();
   const [trip, setTrip] = useState<Trip | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [localMode, setLocalMode] = useState(false);
-  const [online, setOnline] = useState<{ key: string; name: string; color: string }[]>([]);
+  const [online, setOnline] = useState<
+    { key: string; name: string; color: string }[]
+  >([]);
   const [authors, setAuthors] = useState<Author[]>([]);
 
   const enterLocalMode = (message: string) => {
@@ -63,7 +81,11 @@ export function TripProvider({ tripId, children }: { tripId: string; children: R
     let cancelled = false;
     (async () => {
       try {
-        const { data, error } = await getSupabase().from("trips").select("*").eq("id", tripId).maybeSingle();
+        const { data, error } = await getSupabase()
+          .from("trips")
+          .select("*")
+          .eq("id", tripId)
+          .maybeSingle();
         if (cancelled) return;
         if (error) throw error;
         if (!data) throw new Error(NOT_FOUND);
@@ -74,7 +96,8 @@ export function TripProvider({ tripId, children }: { tripId: string; children: R
           end_date: data.end_date ?? null,
         });
       } catch (e) {
-        if (!cancelled) enterLocalMode(errorMessage(e, "Reise konnte nicht geladen werden."));
+        if (!cancelled)
+          enterLocalMode(errorMessage(e, "Reise konnte nicht geladen werden."));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -108,7 +131,8 @@ export function TripProvider({ tripId, children }: { tripId: string; children: R
         );
       })
       .subscribe(async (status) => {
-        if (status === "SUBSCRIBED") await channel.track({ name: member.name, color: member.color });
+        if (status === "SUBSCRIBED")
+          await channel.track({ name: member.name, color: member.color });
       });
     return () => {
       supabase.removeChannel(channel);
@@ -117,17 +141,35 @@ export function TripProvider({ tripId, children }: { tripId: string; children: R
 
   const people = useMemo<Person[]>(() => {
     const list: Person[] = [
-      { key: member.id, name: member.name, color: member.color, online: true, isMe: true },
+      {
+        key: member.id,
+        name: member.name,
+        color: member.color,
+        online: true,
+        isMe: true,
+      },
     ];
     for (const o of online) {
       if (o.key === member.id) continue;
-      list.push({ key: o.key, name: o.name, color: o.color, online: true, isMe: false });
+      list.push({
+        key: o.key,
+        name: o.name,
+        color: o.color,
+        online: true,
+        isMe: false,
+      });
     }
     const seen = new Set(list.map((p) => p.name.toLowerCase()));
     for (const a of authors) {
       if (seen.has(a.name.toLowerCase())) continue;
       seen.add(a.name.toLowerCase());
-      list.push({ key: `author:${a.name}`, name: a.name, color: a.color, online: false, isMe: false });
+      list.push({
+        key: `author:${a.name}`,
+        name: a.name,
+        color: a.color,
+        online: false,
+        isMe: false,
+      });
     }
     return list;
   }, [member, online, authors]);
