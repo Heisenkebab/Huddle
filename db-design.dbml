@@ -1,50 +1,64 @@
 Table trip {
   id uuid [pk]
-  owner_id uuid [ref: > profile.id]
-
+  owner_id uuid [not null, ref: > profile.id]
 }
 
 Table trip_invite {
   id uuid [pk]
-  trip_id uuid [ref: > trip.id]
-  invite_id uuid [unique]
-  created_at timestamptz
-  ending_at timestamptz
+  trip_id uuid [not null, ref: > trip.id]
+  invite_id uuid [not null, unique]
+  created_at timestamptz [not null, default: `now()`]
+  ending_at timestamptz [not null, default: `now() + interval '7 day'`]
 }
 
 
 Table profile {
   id uuid [pk]
-  user_id uuid [unique, ref: - user.id]
-  name text
-  color int
+  user_id uuid [not null, unique, ref: - user.id]
+  name text [not null]
+  color int [not null]
   emoji text
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
 }
 
 Table guest_trip {
-  profile_id uuid [ref: > profile.id]
-  trip_id uuid [ref: > trip.id]
+  id uuid [pk]
+  profile_id uuid [not null, ref: > profile.id]
+  trip_id uuid [not null, ref: > trip.id]
+
+  indexes {
+    (profile_id, trip_id) [unique]
+  }
 }
 
 Table shopping_list_history {
   id uuid [pk, default: `gen_random_uuid()`]
-  trip_id uuid [ref: > trip.id]
-  valid_from timestamptz
-  shopping_list_item_id uuid [ref: > shopping_list_item.id]
+  created_at timestamptz [not null, default: `now()`]
+  shopping_list_item_id uuid [not null, ref: > shopping_list_item.id]
   bought_at timestamptz
   removed_at timestamptz
-  unit Unit
-  amount numeric
+  unit Unit [not null]
+  amount numeric [not null]
+  updated_at timestamptz [not null, default: `now()`]
 
   indexes {
-    (trip_id, valid_from, shopping_list_item_id) [name: "shopping_list_history_trip_id_valid_from_shopping_list_item_id_idx"]
+    shopping_list_item_id [unique, note: "WHERE bought_at IS NULL AND removed_at IS NULL"]
   }
 }
 
 Table shopping_list_item {
   id uuid [pk]
-  category Category
-  name text
+  category Category [not null]
+  name text [not null]
+  trip_id uuid [not null, ref: > trip.id]
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    // "Milch" and " milch " count as the same item within a trip
+    (trip_id, `lower(trim(name))`) [unique, name: "shopping_list_item_trip_name_idx"]
+  }
 }
 
 Enum Category {

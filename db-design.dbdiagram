@@ -10,8 +10,8 @@
       {
         "name": "trip",
         "schemaName": "public",
-        "x": 624,
-        "y": 224
+        "x": 712,
+        "y": 184
       },
       {
         "name": "profile",
@@ -22,20 +22,20 @@
       {
         "name": "guest_trip",
         "schemaName": "public",
-        "x": 1016,
-        "y": 88
+        "x": 1088,
+        "y": 120
       },
       {
         "name": "shopping_list_history",
         "schemaName": "public",
-        "x": 1016,
-        "y": 488
+        "x": 1448,
+        "y": 632
       },
       {
         "name": "shopping_list_item",
         "schemaName": "public",
-        "x": 624,
-        "y": 480
+        "x": 1088,
+        "y": 552
       },
       {
         "name": "user",
@@ -47,19 +47,19 @@
         "name": "bill",
         "schemaName": "public",
         "x": 272,
-        "y": 272
+        "y": 336
       },
       {
         "name": "bills",
         "schemaName": "public",
         "x": 16,
-        "y": 272
+        "y": 336
       },
       {
         "name": "trip_invite",
         "schemaName": "public",
-        "x": 1016,
-        "y": 240
+        "x": 1088,
+        "y": 304
       }
     ],
     "tableGroupCollapseStates": [],
@@ -129,21 +129,6 @@
         "firstFieldNames": [
           "id"
         ],
-        "firstTableName": "trip",
-        "firstSchemaName": "public",
-        "firstRelation": "1",
-        "secondFieldNames": [
-          "trip_id"
-        ],
-        "secondTableName": "shopping_list_history",
-        "secondSchemaName": "public",
-        "secondRelation": "*",
-        "checkPoints": []
-      },
-      {
-        "firstFieldNames": [
-          "id"
-        ],
         "firstTableName": "shopping_list_item",
         "firstSchemaName": "public",
         "firstRelation": "1",
@@ -181,6 +166,21 @@
           "trip_id"
         ],
         "secondTableName": "trip_invite",
+        "secondSchemaName": "public",
+        "secondRelation": "*",
+        "checkPoints": []
+      },
+      {
+        "firstFieldNames": [
+          "id"
+        ],
+        "firstTableName": "trip",
+        "firstSchemaName": "public",
+        "firstRelation": "1",
+        "secondFieldNames": [
+          "trip_id"
+        ],
+        "secondTableName": "shopping_list_item",
         "secondSchemaName": "public",
         "secondRelation": "*",
         "checkPoints": []
