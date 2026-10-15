@@ -1,9 +1,17 @@
 Table trip {
   id uuid [pk]
-  invite_id text [unique]
   owner_id uuid [ref: > profile.id]
 
 }
+
+Table trip_invite {
+  id uuid [pk]
+  trip_id uuid [ref: > trip.id]
+  invite_id uuid [unique]
+  created_at timestamptz
+  ending_at timestamptz
+}
+
 
 Table profile {
   id uuid [pk]
