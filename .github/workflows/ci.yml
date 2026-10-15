@@ -42,6 +42,28 @@ jobs:
       - name: Vitest
         run: npx vitest run
 
+  # Server actions against a throwaway local Supabase, with all migrations applied
+  integration:
+    name: DB integration tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - run: npm ci
+
+      # Uses the Supabase CLI from devDependencies; only starts the services the tests need
+      - name: Start local Supabase
+        run: npx supabase start -x studio,imgproxy,storage-api,mailpit,realtime,edge-runtime,logflare,vector,supavisor
+
+      - name: Integration tests
+        run: npm run test:integration
+
   # Build the app and run Playwright against the production build
   e2e:
     name: E2E (Playwright)
