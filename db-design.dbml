@@ -27,13 +27,18 @@ Table guest_trip {
 }
 
 Table shopping_list_history {
-  trip_id uuid [pk, ref: > trip.id]
-  valid_from timestamptz [pk]
-  shopping_list_item_id uuid [pk, ref: > shopping_list_item.id]
+  id uuid [pk, default: `gen_random_uuid()`]
+  trip_id uuid [ref: > trip.id]
+  valid_from timestamptz
+  shopping_list_item_id uuid [ref: > shopping_list_item.id]
   bought_at timestamptz
   removed_at timestamptz
   unit Unit
   amount numeric
+
+  indexes {
+    (trip_id, valid_from, shopping_list_item_id) [name: "shopping_list_history_trip_id_valid_from_shopping_list_item_id_idx"]
+  }
 }
 
 Table shopping_list_item {
