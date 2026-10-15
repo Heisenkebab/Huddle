@@ -8,7 +8,7 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
-    // Playwright specs live in e2e/ and must not be picked up by Vitest
-    exclude: ["**/node_modules/**", "e2e/**"],
+    // Playwright specs live in e2e/ and DB tests run via vitest.integration.config.mts
+    exclude: ["**/node_modules/**", "e2e/**", "**/*.int.test.ts"],
   },
 });
