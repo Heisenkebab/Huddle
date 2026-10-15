@@ -176,7 +176,7 @@ describe("guest", () => {
     expect(result.success).toBe(true);
   });
 
-  test("can regenerate the invite link", async () => {
+  test("cannot regenerate the invite link", async () => {
     await signInAs(guest.email, TEST_PASSWORD);
 
     const { data, error } = await createSessionClient()
@@ -186,7 +186,7 @@ describe("guest", () => {
       .select("id");
 
     expect(error).toBeNull();
-    expect(data).toHaveLength(1);
+    expect(data).toHaveLength(0);
   });
 
   test("cannot delete the trip", async () => {
