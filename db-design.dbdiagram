@@ -60,6 +60,12 @@
         "schemaName": "public",
         "x": 1088,
         "y": 304
+      },
+      {
+        "name": "users",
+        "schemaName": "auth",
+        "x": 16,
+        "y": 970
       }
     ],
     "tableGroupCollapseStates": [],
@@ -183,6 +189,21 @@
         "secondTableName": "shopping_list_item",
         "secondSchemaName": "public",
         "secondRelation": "*",
+        "checkPoints": []
+      },
+      {
+        "firstFieldNames": [
+          "id"
+        ],
+        "firstTableName": "users",
+        "firstSchemaName": "auth",
+        "firstRelation": "1",
+        "secondFieldNames": [
+          "user_id"
+        ],
+        "secondTableName": "profile",
+        "secondSchemaName": "public",
+        "secondRelation": "1",
         "checkPoints": []
       }
     ]

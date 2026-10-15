@@ -13,32 +13,70 @@ const item: ShoppingListItemBody = {
   amount: 2,
 };
 
+// Expected failures log through console.error; silence only those tests
+function silenceErrorLog() {
+  vi.spyOn(console, "error").mockImplementation(() => {});
+}
+
+async function getHistory(itemId: string) {
+  const { data, error } = await admin
+    .from("shopping_list_history")
+    .select("shopping_list_item_id, unit, amount, bought_at, removed_at")
+    .eq("shopping_list_item_id", itemId)
+    .order("created_at");
+  if (error) throw error;
+  return data;
+}
+
 describe("createItem", () => {
+  let userId: string;
+  let profileId: string;
   let tripId: string;
 
+  // A trip needs an owner profile, and a profile needs an auth user
   beforeEach(async () => {
-    vi.spyOn(console, "error").mockImplementation(() => {});
-
+    profileId = randomUUID();
     tripId = randomUUID();
-    const { error } = await admin
+
+    const user = await admin.auth.admin.createUser({
+      email: `${randomUUID()}@huddle.test`,
+      password: "password123",
+      email_confirm: true,
+    });
+    if (user.error) throw user.error;
+    userId = user.data.user.id;
+
+    const profile = await admin
+      .from("profile")
+      .insert({ id: profileId, user_id: userId, name: "Test", color: 0 });
+    if (profile.error) throw profile.error;
+
+    const trip = await admin
       .from("trip")
-      .insert({ id: tripId, invite_id: randomUUID() });
-    if (error) throw error;
+      .insert({ id: tripId, owner_id: profileId });
+    if (trip.error) throw trip.error;
   });
 
   afterEach(async () => {
-    const { data: history } = await admin
+    vi.restoreAllMocks();
+
+    const { data: items } = await admin
+      .from("shopping_list_item")
+      .select("id")
+      .eq("trip_id", tripId);
+    const itemIds = (items ?? []).map((row) => row.id);
+
+    await admin
       .from("shopping_list_history")
       .delete()
-      .eq("trip_id", tripId)
-      .select("shopping_list_item_id");
-
-    const itemIds = (history ?? []).map((row) => row.shopping_list_item_id);
+      .in("shopping_list_item_id", itemIds);
     await admin.from("shopping_list_item").delete().in("id", itemIds);
     await admin.from("trip").delete().eq("id", tripId);
+    // Also deletes the profile through ON DELETE CASCADE
+    await admin.auth.admin.deleteUser(userId);
   });
 
-  test("creates the item and returns its id", async () => {
+  test("creates the item in the trip and returns its id", async () => {
     const result = await createItem(tripId, item);
 
     expect(result.success).toBe(true);
@@ -46,31 +84,24 @@ describe("createItem", () => {
 
     const { data: created } = await admin
       .from("shopping_list_item")
-      .select("id, name, category")
+      .select("id, trip_id, name, category")
       .eq("id", result.data.id)
       .single();
 
     expect(created).toEqual({
       id: result.data.id,
+      trip_id: tripId,
       name: "Milk",
       category: Category.DAIRY,
     });
   });
 
-  test("creates the first history entry for the trip", async () => {
+  test("opens a history entry with the unit and amount", async () => {
     const result = await createItem(tripId, item);
     if (!result.success) throw new Error(result.error);
 
-    const { data: history } = await admin
-      .from("shopping_list_history")
-      .select(
-        "trip_id, shopping_list_item_id, unit, amount, bought_at, removed_at",
-      )
-      .eq("shopping_list_item_id", result.data.id);
-
-    expect(history).toEqual([
+    expect(await getHistory(result.data.id)).toEqual([
       {
-        trip_id: tripId,
         shopping_list_item_id: result.data.id,
         unit: Unit.LITER,
         amount: 2,
@@ -80,7 +111,44 @@ describe("createItem", () => {
     ]);
   });
 
+  test("reuses the existing item when it is added again after being bought", async () => {
+    const first = await createItem(tripId, item);
+    if (!first.success) throw new Error(first.error);
+
+    await admin
+      .from("shopping_list_history")
+      .update({ bought_at: new Date().toISOString() })
+      .eq("shopping_list_item_id", first.data.id);
+
+    const second = await createItem(tripId, {
+      ...item,
+      name: "  milk ",
+      amount: 1,
+    });
+    if (!second.success) throw new Error(second.error);
+
+    expect(second.data.id).toBe(first.data.id);
+
+    const history = await getHistory(first.data.id);
+    expect(history).toHaveLength(2);
+    expect(history[1]).toMatchObject({ amount: 1, bought_at: null });
+  });
+
+  test("fails when the item already has an open entry", async () => {
+    silenceErrorLog();
+
+    const first = await createItem(tripId, item);
+    if (!first.success) throw new Error(first.error);
+
+    const second = await createItem(tripId, item);
+
+    expect(second).toEqual({ success: false, error: "Failed to create item" });
+    expect(await getHistory(first.data.id)).toHaveLength(1);
+  });
+
   test("fails and writes nothing when the trip does not exist", async () => {
+    silenceErrorLog();
+
     const before = await admin
       .from("shopping_list_item")
       .select("*", { count: "exact", head: true });

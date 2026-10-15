@@ -14,10 +14,11 @@ Table trip_invite {
 
 Table profile {
   id uuid [pk]
-  user_id uuid [not null, unique, ref: - user.id]
+  user_id uuid [not null, unique, ref: - auth.users.id, note: "ON DELETE CASCADE"]
   name text [not null]
   color int [not null]
   emoji text
+  image_url text
   created_at timestamptz [not null, default: `now()`]
   updated_at timestamptz [not null, default: `now()`]
 }
@@ -76,9 +77,9 @@ Enum Unit {
   AMOUNT
 }
 
-Table user {
-  id uuid [pk, not null]
-  image_url text
+// Managed by Supabase Auth, not created by our migrations
+Table auth.users {
+  id uuid [pk]
 }
 
 Table bill {

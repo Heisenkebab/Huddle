@@ -1,12 +1,36 @@
 -- Demo-Daten wie im Entwurf "Mobile / 2a · Einkauf"
 -- Only runs locally (`supabase start` on a new DB, `supabase db reset`)
 
-insert into public.user (id) values
-  ('c0000000-0000-4000-8000-000000000001'),
-  ('c0000000-0000-4000-8000-000000000002'),
-  ('c0000000-0000-4000-8000-000000000003'),
-  ('c0000000-0000-4000-8000-000000000004'),
-  ('c0000000-0000-4000-8000-000000000005');
+-- Supabase Auth accounts. Sign in with e.g. sara@huddle.test / password123
+create temporary table demo_user (id uuid, email text);
+insert into demo_user (id, email) values
+  ('c0000000-0000-4000-8000-000000000001', 'sara@huddle.test'),
+  ('c0000000-0000-4000-8000-000000000002', 'mia@huddle.test'),
+  ('c0000000-0000-4000-8000-000000000003', 'tom@huddle.test'),
+  ('c0000000-0000-4000-8000-000000000004', 'lena@huddle.test'),
+  ('c0000000-0000-4000-8000-000000000005', 'jonas@huddle.test');
+
+-- Auth expects the token columns to be '' instead of NULL, or sign-in fails
+insert into auth.users (
+  instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+  raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+  confirmation_token, recovery_token, email_change_token_new, email_change
+)
+select
+  '00000000-0000-0000-0000-000000000000', id, 'authenticated', 'authenticated', email,
+  extensions.crypt('password123', extensions.gen_salt('bf')), now(),
+  '{"provider": "email", "providers": ["email"]}', '{}', now(), now(),
+  '', '', '', ''
+from demo_user;
+
+insert into auth.identities (
+  id, user_id, provider_id, provider, identity_data, last_sign_in_at, created_at, updated_at
+)
+select
+  gen_random_uuid(), id, id::text, 'email',
+  jsonb_build_object('sub', id::text, 'email', email, 'email_verified', true),
+  now(), now(), now()
+from demo_user;
 
 insert into public.profile (id, user_id, name, color) values
   ('a0000000-0000-4000-8000-000000000001', 'c0000000-0000-4000-8000-000000000001', 'Sara',  x'E0A526'::int),

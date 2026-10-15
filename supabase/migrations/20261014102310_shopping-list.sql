@@ -13,17 +13,14 @@ CREATE TYPE "Unit" AS ENUM (
   'AMOUNT'
 );
 
-CREATE TABLE "user" (
-  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  "image_url" text
-);
-
 CREATE TABLE "profile" (
   "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  "user_id" uuid NOT NULL UNIQUE REFERENCES "user" ("id"),
+  -- Supabase Auth account; the profile is deleted together with it
+  "user_id" uuid NOT NULL UNIQUE REFERENCES auth.users ("id") ON DELETE CASCADE,
   "name" text NOT NULL,
   "color" int NOT NULL,
   "emoji" text,
+  "image_url" text,
   "created_at" timestamptz NOT NULL DEFAULT now(),
   "updated_at" timestamptz NOT NULL DEFAULT now()
 );
