@@ -263,18 +263,6 @@ export default function ShoppingList() {
     );
   }, [items]);
 
-  // Mit "Neu" angelegte Kategorien auch für weitere Artikel anbieten
-  const extraCategories = useMemo(
-    () => [
-      ...new Set(
-        items
-          .map((i) => i.category)
-          .filter((c): c is string => !!c && !CATEGORY_ORDER.includes(c)),
-      ),
-    ],
-    [items],
-  );
-
   const openCount = items.filter((i) => !i.purchased).length;
 
   /* ---------- WhatsApp-Brücke: offene Artikel als Klartext ---------- */
@@ -395,7 +383,6 @@ export default function ShoppingList() {
         open={editorOpen}
         onOpenChange={setEditorOpen}
         target={editor}
-        extraCategories={extraCategories}
         onSave={async (values) => {
           if (editor.mode === "edit") await updateItem(editor.item.id, values);
           else await addItem(values);
@@ -610,16 +597,14 @@ function ItemRow({
               >
                 {item.name}
               </span>
-              {(item.quantity != null || item.unit) && (
-                <span
-                  className={cn(
-                    "text-xs text-muted-foreground",
-                    item.purchased && "opacity-50",
-                  )}
-                >
-                  {formatQuantity(item.quantity, item.unit)}
-                </span>
-              )}
+              <span
+                className={cn(
+                  "text-xs text-muted-foreground",
+                  item.purchased && "opacity-50",
+                )}
+              >
+                {formatQuantity(item.quantity, item.unit)}
+              </span>
             </span>
 
             {/* Laptop: Bearbeiten/Löschen beim Hovern (Entwurf LE1) */}

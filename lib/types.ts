@@ -2,8 +2,8 @@ export type ShoppingItem = {
   id: string;
   trip_id: string;
   name: string;
-  quantity: number | null;
-  unit: string | null;
+  quantity: number;
+  unit: string;
   category: string | null;
   /** Wird im MVP später über das Detail-Popup gepflegt – aktuell nicht im UI. */
   description: string | null;
@@ -15,8 +15,8 @@ export type ShoppingItem = {
 
 export type ShoppingItemInput = {
   name: string;
-  quantity: number | null;
-  unit: string | null;
+  quantity: number;
+  unit: string;
   category: string | null;
 };
 
@@ -26,6 +26,7 @@ export const CATEGORIES = [
   "Backwaren",
   "Getränke",
   "Grillen",
+  "Sonstiges",
 ] as const;
 
 /** Reihenfolge der Abschnitte in der Liste (wie im Laden). */

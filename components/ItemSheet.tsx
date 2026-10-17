@@ -52,9 +52,9 @@ export default function ItemSheet({
 
   const [name, setName] = useState(item?.name ?? "");
   const [qtyText, setQtyText] = useState(
-    item?.quantity != null ? formatNumber(item.quantity) : "1",
+    item ? formatNumber(item.quantity) : "1",
   );
-  const [unit, setUnit] = useState<string | null>(item ? item.unit : "Stück");
+  const [unit, setUnit] = useState<string>(item?.unit ?? "Stück");
   const [category, setCategory] = useState<string | null>(
     item?.category ?? null,
   );
@@ -67,7 +67,7 @@ export default function ItemSheet({
     unitOptions.push(item.unit);
 
   const qty = parseNumber(qtyText);
-  const qtyInvalid = qtyText.trim() !== "" && qty === null;
+  const qtyInvalid = qty === null || qty <= 0;
 
   const stepQty = (dir: 1 | -1) => {
     const step = stepForUnit(unit);
@@ -82,14 +82,15 @@ export default function ItemSheet({
     e.preventDefault();
     const trimmed = name.trim();
     if (!trimmed) return setError("Bitte gib einen Artikel ein.");
-    if (qtyInvalid) return setError("Die Menge ist keine gültige Zahl.");
+    if (qtyInvalid || qty === null)
+      return setError("Bitte gib eine Menge größer 0 ein.");
     setSaving(true);
     setError(null);
     try {
       await onSave({
         name: trimmed,
         quantity: qty,
-        unit: qty == null ? null : unit,
+        unit,
         category,
       });
     } catch (err) {
