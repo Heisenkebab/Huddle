@@ -5,6 +5,13 @@ const admin = createAdminClient();
 
 export const TEST_PASSWORD = "password123";
 
+// Required trip columns, so inserts only fail for the reason a test checks
+export const TEST_TRIP = {
+  name: "Testreise",
+  start_date: "2026-07-01T00:00:00Z",
+  end_date: "2026-07-08T00:00:00Z",
+};
+
 export type TestUser = { userId: string; profileId: string; email: string };
 
 // Creates an auth user with a profile. Uses the admin client, so RLS is skipped.
@@ -19,7 +26,7 @@ export async function createTestUser(name = "Test"): Promise<TestUser> {
 
   const { data: profile, error } = await admin
     .from("profile")
-    .insert({ user_id: user.data.user.id, name, color: 0 })
+    .insert({ user_id: user.data.user.id, name, color: "#E0A526" })
     .select("id")
     .single();
   if (error) throw error;
@@ -30,7 +37,7 @@ export async function createTestUser(name = "Test"): Promise<TestUser> {
 export async function createTestTrip(owner: TestUser, guests: TestUser[] = []) {
   const { data: trip, error } = await admin
     .from("trip")
-    .insert({ owner_id: owner.profileId })
+    .insert({ ...TEST_TRIP, owner_id: owner.profileId })
     .select("id")
     .single();
   if (error) throw error;

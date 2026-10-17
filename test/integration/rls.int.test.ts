@@ -15,6 +15,7 @@ import {
   createTestTrip,
   createTestUser,
   TEST_PASSWORD,
+  TEST_TRIP,
   TestUser,
 } from "./fixtures";
 import {
@@ -47,7 +48,7 @@ beforeAll(async () => {
 
   const { data: item, error } = await admin
     .from("shopping_list_item")
-    .insert({ trip_id: tripId, name: "Milch", category: Category.DAIRY })
+    .insert({ trip_id: tripId, name: "Milch", category: Category.CHILLED })
     .select("id")
     .single();
   if (error) throw error;
@@ -111,7 +112,7 @@ describe("outsider", () => {
 
     const result = await createItem(tripId, {
       name: "Bier",
-      category: Category.DRINK,
+      category: Category.DRINKS,
       unit: Unit.AMOUNT,
       amount: 1,
     });
@@ -126,7 +127,7 @@ describe("signed-in user", () => {
 
     const { data, error } = await createSessionClient()
       .from("trip")
-      .insert({ owner_id: outsider.profileId })
+      .insert({ ...TEST_TRIP, owner_id: outsider.profileId })
       .select("id")
       .single();
 
@@ -139,7 +140,7 @@ describe("signed-in user", () => {
 
     const { error } = await createSessionClient()
       .from("trip")
-      .insert({ owner_id: owner.profileId });
+      .insert({ ...TEST_TRIP, owner_id: owner.profileId });
 
     expect(error).not.toBeNull();
   });
@@ -168,7 +169,7 @@ describe("guest", () => {
 
     const result = await createItem(tripId, {
       name: "Brot",
-      category: Category.FOOD,
+      category: Category.PRODUCE,
       unit: Unit.AMOUNT,
       amount: 1,
     });
@@ -218,7 +219,7 @@ describe("anonymous guest", () => {
     // profile insert policy for anonymous users
     const { data: profile, error } = await createSessionClient()
       .from("profile")
-      .insert({ user_id: session.userId, name: "Anonym", color: 0 })
+      .insert({ user_id: session.userId, name: "Anonym", color: "#E0A526" })
       .select("id")
       .single();
     if (error) throw error;
@@ -247,7 +248,7 @@ describe("anonymous guest", () => {
 
     const result = await createItem(tripId, {
       name: "Chips",
-      category: Category.FOOD,
+      category: Category.PRODUCE,
       unit: Unit.AMOUNT,
       amount: 2,
     });
@@ -260,7 +261,7 @@ describe("anonymous guest", () => {
 
     const { error } = await createSessionClient()
       .from("trip")
-      .insert({ owner_id: anonymousGuest.profileId });
+      .insert({ ...TEST_TRIP, owner_id: anonymousGuest.profileId });
 
     expect(error).not.toBeNull();
   });

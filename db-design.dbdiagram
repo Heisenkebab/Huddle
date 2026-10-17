@@ -10,62 +10,44 @@
       {
         "name": "trip",
         "schemaName": "public",
-        "x": 712,
+        "x": 696,
         "y": 184
       },
       {
         "name": "profile",
         "schemaName": "public",
-        "x": 272,
-        "y": 24
+        "x": 256,
+        "y": 16
       },
       {
         "name": "guest_trip",
         "schemaName": "public",
-        "x": 1088,
-        "y": 120
+        "x": 1112,
+        "y": 712
       },
       {
         "name": "shopping_list_history",
         "schemaName": "public",
-        "x": 1448,
-        "y": 632
+        "x": 1576,
+        "y": 128
       },
       {
         "name": "shopping_list_item",
         "schemaName": "public",
-        "x": 1088,
-        "y": 552
-      },
-      {
-        "name": "user",
-        "schemaName": "public",
-        "x": 16,
-        "y": 16
-      },
-      {
-        "name": "bill",
-        "schemaName": "public",
-        "x": 272,
-        "y": 336
-      },
-      {
-        "name": "bills",
-        "schemaName": "public",
-        "x": 16,
-        "y": 336
+        "x": 1112,
+        "y": 184
       },
       {
         "name": "trip_invite",
         "schemaName": "public",
-        "x": 1088,
-        "y": 304
+        "x": 1112,
+        "y": 464
       },
       {
         "name": "users",
         "schemaName": "auth",
         "x": 16,
-        "y": 970
+        "y": 16
       }
     ],
     "tableGroupCollapseStates": [],
@@ -84,21 +66,6 @@
         "secondTableName": "trip",
         "secondSchemaName": "public",
         "secondRelation": "*",
-        "checkPoints": []
-      },
-      {
-        "firstFieldNames": [
-          "id"
-        ],
-        "firstTableName": "user",
-        "firstSchemaName": "public",
-        "firstRelation": "1",
-        "secondFieldNames": [
-          "user_id"
-        ],
-        "secondTableName": "profile",
-        "secondSchemaName": "public",
-        "secondRelation": "1",
         "checkPoints": []
       },
       {
@@ -150,21 +117,6 @@
         "firstFieldNames": [
           "id"
         ],
-        "firstTableName": "bills",
-        "firstSchemaName": "public",
-        "firstRelation": "1",
-        "secondFieldNames": [
-          "bills"
-        ],
-        "secondTableName": "bill",
-        "secondSchemaName": "public",
-        "secondRelation": "*",
-        "checkPoints": []
-      },
-      {
-        "firstFieldNames": [
-          "id"
-        ],
         "firstTableName": "trip",
         "firstSchemaName": "public",
         "firstRelation": "1",
@@ -204,6 +156,36 @@
         "secondTableName": "profile",
         "secondSchemaName": "public",
         "secondRelation": "1",
+        "checkPoints": []
+      },
+      {
+        "firstFieldNames": [
+          "id"
+        ],
+        "firstTableName": "profile",
+        "firstSchemaName": "public",
+        "firstRelation": "1",
+        "secondFieldNames": [
+          "updated_by"
+        ],
+        "secondTableName": "shopping_list_history",
+        "secondSchemaName": "public",
+        "secondRelation": "*",
+        "checkPoints": []
+      },
+      {
+        "firstFieldNames": [
+          "id"
+        ],
+        "firstTableName": "profile",
+        "firstSchemaName": "public",
+        "firstRelation": "1",
+        "secondFieldNames": [
+          "created_by"
+        ],
+        "secondTableName": "shopping_list_history",
+        "secondSchemaName": "public",
+        "secondRelation": "*",
         "checkPoints": []
       }
     ]

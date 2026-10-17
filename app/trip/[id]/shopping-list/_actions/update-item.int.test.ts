@@ -17,7 +17,7 @@ const admin = createAdminClient();
 
 const item: ShoppingListItemBody = {
   name: "Milk",
-  category: Category.DAIRY,
+  category: Category.CHILLED,
   unit: Unit.LITER,
   amount: 2,
 };
@@ -155,7 +155,7 @@ describe("updateItem", () => {
       id: itemId,
       trip_id: tripId,
       name: "Milk",
-      category: Category.DAIRY,
+      category: Category.CHILLED,
     });
 
     const history = await getHistory(itemId);

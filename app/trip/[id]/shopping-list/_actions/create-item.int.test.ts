@@ -18,7 +18,7 @@ const admin = createAdminClient();
 
 const item: ShoppingListItemBody = {
   name: "Milk",
-  category: Category.DAIRY,
+  category: Category.CHILLED,
   unit: Unit.LITER,
   amount: 2,
 };
@@ -60,7 +60,7 @@ describe("createItem", () => {
       id: result.data.id,
       trip_id: tripId,
       name: "Milk",
-      category: Category.DAIRY,
+      category: Category.CHILLED,
     });
   });
 

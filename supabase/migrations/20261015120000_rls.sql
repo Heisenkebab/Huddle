@@ -171,9 +171,3 @@ CREATE POLICY "members manage the trip's item history"
         AND public.is_trip_member(i.trip_id)
     )
   );
-
--- bills / bill ----------------------------------------------------------------
--- Not linked to a trip yet, so there is no rule to write. RLS without policies
--- blocks all API access until they are connected.
-ALTER TABLE public.bills ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.bill ENABLE ROW LEVEL SECURITY;
