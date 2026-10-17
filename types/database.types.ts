@@ -176,7 +176,9 @@ isOneToOne: false
 { Args: { "p_profile_id": string }; Returns: boolean
                            },
 "update_shopping_list_item":
-{ Args: { "p_amount"?: number,"p_category"?: Database["public"]['Enums']["Category"],"p_item_id": string,"p_name"?: string,"p_trip_id": string,"p_unit"?: Database["public"]['Enums']["Unit"] }; Returns: undefined
+{ Args: { "p_amount"?: number,"p_category"?: Database["public"]['Enums']["Category"],"p_item_id": string,"p_name"?: string,"p_trip_id": string,"p_unit"?: Database["public"]['Enums']["Unit"] }; Returns: {
+              "amount": number,"category": Database["public"]['Enums']["Category"],"id": string,"name": string,"shopping_list_item_id": string,"unit": Database["public"]['Enums']["Unit"]
+            }[]
                            }
           }
           Enums: {

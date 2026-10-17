@@ -39,14 +39,26 @@ async function seedItem(
     .insert({ id, trip_id: tripId, name: body.name, category: body.category });
   if (created.error) throw created.error;
 
-  const history = await admin.from("shopping_list_history").insert({
-    shopping_list_item_id: id,
-    unit: body.unit,
-    amount: body.amount,
-  });
-  if (history.error) throw history.error;
+  await openEntry(id, body.unit, body.amount);
 
   return id;
+}
+
+async function openEntry(itemId: string, unit: Unit, amount: number) {
+  const { error } = await admin
+    .from("shopping_list_history")
+    .insert({ shopping_list_item_id: itemId, unit, amount });
+  if (error) throw error;
+}
+
+async function buyOpenEntry(itemId: string) {
+  const { error } = await admin
+    .from("shopping_list_history")
+    .update({ bought_at: new Date().toISOString() })
+    .eq("shopping_list_item_id", itemId)
+    .is("bought_at", null)
+    .is("removed_at", null);
+  if (error) throw error;
 }
 
 async function getItem(itemId: string) {
@@ -59,15 +71,29 @@ async function getItem(itemId: string) {
   return data;
 }
 
+async function getOpenEntryId(itemId: string) {
+  const { data, error } = await admin
+    .from("shopping_list_history")
+    .select("id")
+    .eq("shopping_list_item_id", itemId)
+    .is("bought_at", null)
+    .is("removed_at", null)
+    .single();
+  if (error) throw error;
+  return data.id;
+}
+
 describe("updateItem", () => {
   let tripId: string;
   let itemId: string;
   let owner: TestUser;
+  let tripIds: string[];
 
   // A trip needs an owner profile, and a profile needs an auth user
   beforeEach(async () => {
     owner = await createTestUser();
     tripId = await createTestTrip(owner);
+    tripIds = [tripId];
     await signInAs(owner.email, TEST_PASSWORD);
 
     itemId = await seedItem(tripId);
@@ -76,61 +102,71 @@ describe("updateItem", () => {
   afterEach(async () => {
     vi.restoreAllMocks();
     signOut();
-    await cleanUp([tripId], [owner]);
+    await cleanUp(tripIds, [owner]);
   });
 
-  test("update shopping list item and test lowercase + trim", async () => {
-    const updated = await updateItem(itemId, tripId, {
-      ...item,
+  test("updates every field, trims the name and returns the open entry", async () => {
+    const result = await updateItem(itemId, tripId, {
       name: " cheese ",
       category: Category.OTHER,
       unit: Unit.AMOUNT,
+      amount: 3,
     });
-    expect(updated.success).toBe(true);
-    if (!updated.success) return;
 
-    const createdItem = await getItem(itemId);
+    expect(result).toEqual({
+      success: true,
+      data: {
+        id: await getOpenEntryId(itemId),
+        shopping_list_item_id: itemId,
+        unit: Unit.AMOUNT,
+        amount: 3,
+        shopping_list_item: {
+          id: itemId,
+          category: Category.OTHER,
+          name: "cheese",
+        },
+      },
+    });
 
-    expect(createdItem).toEqual({
+    expect(await getItem(itemId)).toEqual({
       id: itemId,
       trip_id: tripId,
       name: "cheese",
       category: Category.OTHER,
     });
-
-    const history = await getHistory(itemId);
-
-    expect(history).toEqual([
+    expect(await getHistory(itemId)).toEqual([
       {
         shopping_list_item_id: itemId,
         unit: Unit.AMOUNT,
-        amount: 2,
+        amount: 3,
         bought_at: null,
         removed_at: null,
       },
     ]);
   });
-  test("update shopping list item but only the name and category", async () => {
-    const updated = await updateItem(itemId, tripId, {
-      ...item,
-      name: " cheese ",
-      category: Category.OTHER,
-    });
-    expect(updated.success).toBe(true);
-    if (!updated.success) return;
 
-    const createdItem = await getItem(itemId);
-
-    expect(createdItem).toEqual({
-      id: itemId,
-      trip_id: tripId,
-      name: "cheese",
+  test("updates only the name and category and still returns the entry", async () => {
+    const result = await updateItem(itemId, tripId, {
+      name: "Cheese",
       category: Category.OTHER,
     });
 
-    const history = await getHistory(itemId);
+    expect(result).toEqual({
+      success: true,
+      data: {
+        id: await getOpenEntryId(itemId),
+        shopping_list_item_id: itemId,
+        unit: Unit.LITER,
+        amount: 2,
+        shopping_list_item: {
+          id: itemId,
+          category: Category.OTHER,
+          name: "Cheese",
+        },
+      },
+    });
 
-    expect(history).toEqual([
+    expect(await getHistory(itemId)).toEqual([
       {
         shopping_list_item_id: itemId,
         unit: Unit.LITER,
@@ -140,27 +176,28 @@ describe("updateItem", () => {
       },
     ]);
   });
-  test("update shopping list item but only the unit and value", async () => {
-    const updated = await updateItem(itemId, tripId, {
-      ...item,
+
+  test("updates only the unit and amount", async () => {
+    const result = await updateItem(itemId, tripId, {
       unit: Unit.AMOUNT,
       amount: 5,
     });
-    expect(updated.success).toBe(true);
-    if (!updated.success) return;
 
-    const createdItem = await getItem(itemId);
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data).toMatchObject({
+      unit: Unit.AMOUNT,
+      amount: 5,
+      shopping_list_item: { name: "Milk", category: Category.CHILLED },
+    });
 
-    expect(createdItem).toEqual({
+    expect(await getItem(itemId)).toEqual({
       id: itemId,
       trip_id: tripId,
       name: "Milk",
       category: Category.CHILLED,
     });
-
-    const history = await getHistory(itemId);
-
-    expect(history).toEqual([
+    expect(await getHistory(itemId)).toEqual([
       {
         shopping_list_item_id: itemId,
         unit: Unit.AMOUNT,
@@ -170,7 +207,59 @@ describe("updateItem", () => {
       },
     ]);
   });
-  test("update shopping list item from another trip", async () => {});
-  test("update shopping list item that does not exist", async () => {});
-  test("update shopping list item that in the past was bought", async () => {});
+
+  test("updates only the open entry of an item that was bought before", async () => {
+    await buyOpenEntry(itemId);
+    await openEntry(itemId, Unit.LITER, 1);
+
+    const result = await updateItem(itemId, tripId, { amount: 4 });
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data).toMatchObject({
+      id: await getOpenEntryId(itemId),
+      amount: 4,
+    });
+
+    const history = await getHistory(itemId);
+    expect(history).toHaveLength(2);
+    expect(history[0]).toMatchObject({
+      amount: 2,
+      bought_at: expect.any(String),
+    });
+    expect(history[1]).toMatchObject({ amount: 4, bought_at: null });
+  });
+
+  test("fails when the item has no open entry", async () => {
+    silenceErrorLog();
+    await buyOpenEntry(itemId);
+
+    const result = await updateItem(itemId, tripId, { amount: 4 });
+
+    expect(result).toEqual({ success: false, error: "Failed to update item" });
+    expect((await getHistory(itemId))[0]).toMatchObject({ amount: 2 });
+  });
+
+  test("fails and changes nothing when the item belongs to another trip", async () => {
+    silenceErrorLog();
+    const otherTripId = await createTestTrip(owner);
+    tripIds.push(otherTripId);
+
+    const result = await updateItem(itemId, otherTripId, {
+      name: "Cheese",
+      amount: 4,
+    });
+
+    expect(result).toEqual({ success: false, error: "Failed to update item" });
+    expect(await getItem(itemId)).toMatchObject({ name: "Milk" });
+    expect((await getHistory(itemId))[0]).toMatchObject({ amount: 2 });
+  });
+
+  test("fails when the item does not exist", async () => {
+    silenceErrorLog();
+
+    const result = await updateItem(randomUUID(), tripId, { name: "Cheese" });
+
+    expect(result).toEqual({ success: false, error: "Failed to update item" });
+  });
 });

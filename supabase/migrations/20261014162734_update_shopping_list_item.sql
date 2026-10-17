@@ -1,4 +1,5 @@
--- Updates an item of a trip. Only the fields that are not NULL are changed.
+-- Updates an item of a trip and returns its open history entry together with
+-- the item's name and category. Only the fields that are not NULL are changed.
 -- A new unit or amount is written to the item's open history entry in place.
 CREATE OR REPLACE FUNCTION update_shopping_list_item(
   p_trip_id uuid,
@@ -8,10 +9,20 @@ CREATE OR REPLACE FUNCTION update_shopping_list_item(
   p_unit "Unit" DEFAULT NULL,
   p_amount numeric DEFAULT NULL
 )
-RETURNS void
+RETURNS TABLE (
+  id uuid,
+  shopping_list_item_id uuid,
+  unit "Unit",
+  amount numeric,
+  name text,
+  category "Category"
+)
 LANGUAGE plpgsql
 SECURITY INVOKER
 AS $$
+-- The output columns share names with table columns; in queries, mean the
+-- table columns
+#variable_conflict use_column
 BEGIN
   -- The trip check stops callers from editing an item of another trip
   UPDATE shopping_list_item
@@ -40,5 +51,13 @@ BEGIN
       RAISE EXCEPTION 'Item % has no open entry to update', p_item_id;
     END IF;
   END IF;
+
+  RETURN QUERY
+  SELECT h.id, h.shopping_list_item_id, h.unit, h.amount, i.name, i.category
+  FROM shopping_list_history h
+  JOIN shopping_list_item i ON i.id = h.shopping_list_item_id
+  WHERE h.shopping_list_item_id = p_item_id
+    AND h.bought_at IS NULL
+    AND h.removed_at IS NULL;
 END;
 $$;
