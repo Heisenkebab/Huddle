@@ -15,12 +15,14 @@ import { showInfoToast, showUndoToast } from "@/lib/toasts";
 import { errorMessage, useTrip } from "@/lib/trip-context";
 import {
   CATEGORY_ORDER,
+  type CategoryKey,
   type ShoppingItem,
   type ShoppingItemInput,
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 import { Copy, Pencil, Plus, ShoppingCart, Trash2 } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import ItemEditor, { type EditorTarget } from "./ItemEditor";
@@ -42,6 +44,8 @@ function randomId() {
 export default function ShoppingList() {
   const trip = useTrip();
   const { tripId, member, localMode, setAuthors, enterLocalMode } = trip;
+  const t = useTranslations();
+  const locale = useLocale();
   const [items, setItems] = useState<ShoppingItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [editorOpen, setEditorOpen] = useState(false);
@@ -79,7 +83,7 @@ export default function ShoppingList() {
         setItems(data as ShoppingItem[]);
       } catch (e) {
         if (!cancelled)
-          enterLocalMode(errorMessage(e, "Liste konnte nicht geladen werden."));
+          enterLocalMode(errorMessage(e, t("shoppingList.loadFailed")));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -156,7 +160,7 @@ export default function ShoppingList() {
           i.id === item.id ? { ...i, purchased: item.purchased } : i,
         ),
       );
-      toast.error("Änderung konnte nicht gespeichert werden.", {
+      toast.error(t("shoppingList.saveFailed"), {
         description: error.message,
       });
     }
@@ -218,10 +222,11 @@ export default function ShoppingList() {
       setItems((prev) =>
         prev.some((i) => i.id === item.id) ? prev : [...prev, item],
       );
-    const message = `„${item.name}“ gelöscht`;
+    const message = t("shoppingList.deleted", { name: item.name });
+    const undoLabel = t("toasts.undo");
 
     if (localMode) {
-      showUndoToast(message, restoreLocal);
+      showUndoToast(message, undoLabel, restoreLocal);
       return;
     }
     const { error } = await getSupabase()
@@ -230,17 +235,17 @@ export default function ShoppingList() {
       .eq("id", item.id);
     if (error) {
       restoreLocal();
-      toast.error("Artikel konnte nicht gelöscht werden.", {
+      toast.error(t("shoppingList.deleteFailed"), {
         description: error.message,
       });
       return;
     }
-    showUndoToast(message, async () => {
+    showUndoToast(message, undoLabel, async () => {
       const { error: restoreError } = await getSupabase()
         .from("shopping_items")
         .insert(item);
       if (restoreError) {
-        toast.error("Wiederherstellen fehlgeschlagen.", {
+        toast.error(t("shoppingList.restoreFailed"), {
           description: restoreError.message,
         });
         return;
@@ -251,16 +256,13 @@ export default function ShoppingList() {
 
   /* ---------- Gruppierung nach Kategorie ---------- */
   const groups = useMemo(() => {
-    const map = new Map<string, ShoppingItem[]>();
+    const map = new Map<CategoryKey, ShoppingItem[]>();
     for (const item of [...items].sort((a, b) =>
       a.created_at.localeCompare(b.created_at),
     )) {
-      const key = item.category ?? "Sonstiges";
-      map.set(key, [...(map.get(key) ?? []), item]);
+      map.set(item.category, [...(map.get(item.category) ?? []), item]);
     }
-    return [...map.entries()].sort(
-      ([a], [b]) => rank(a) - rank(b) || a.localeCompare(b, "de"),
-    );
+    return [...map.entries()].sort(([a], [b]) => rank(a) - rank(b));
   }, [items]);
 
   const openCount = items.filter((i) => !i.purchased).length;
@@ -268,21 +270,21 @@ export default function ShoppingList() {
   /* ---------- WhatsApp-Brücke: offene Artikel als Klartext ---------- */
   const copyForWhatsApp = async () => {
     const lines = [
-      `🛒 *Einkaufsliste${trip.trip?.name ? ` – ${trip.trip.name}` : ""}*`,
+      `🛒 *${t("shoppingList.whatsAppTitle")}${trip.trip?.name ? ` – ${trip.trip.name}` : ""}*`,
     ];
     for (const [category, list] of groups) {
       const open = list.filter((i) => !i.purchased);
       if (open.length === 0) continue;
-      lines.push("", `*${category}*`);
+      lines.push("", `*${t(`categories.${category}`)}*`);
       for (const i of open) {
-        const qty = formatQuantity(i.quantity, i.unit);
+        const qty = formatQuantity(i.quantity, t(`units.${i.unit}`), locale);
         lines.push(`• ${i.name}${qty ? ` (${qty})` : ""}`);
       }
     }
-    if (openCount === 0) lines.push("", "Alles erledigt ✅");
+    if (openCount === 0) lines.push("", t("shoppingList.allDone"));
     const ok = await copyText(lines.join("\n"));
     showInfoToast(
-      ok ? "Liste für WhatsApp kopiert" : "Kopieren nicht möglich",
+      ok ? t("shoppingList.copiedForWhatsApp") : t("trip.copyFailed"),
       <Copy />,
     );
   };
@@ -291,7 +293,7 @@ export default function ShoppingList() {
 
   return (
     <>
-      <PageHeader title="Einkauf" />
+      <PageHeader title={t("shoppingList.title")} />
 
       {/* Laptop: alles in einer Karte (Entwurf LE1) */}
       <section className="lg:rounded-[28px] lg:border lg:bg-card/60 lg:p-6 lg:shadow-[0_1px_2px_rgb(30_28_24/0.04)] dark:lg:bg-[#232323]">
@@ -300,9 +302,9 @@ export default function ShoppingList() {
             <ShoppingCart className="size-5" strokeWidth={1.8} />
           </span>
           <div className="mr-auto">
-            <h2 className="text-lg font-bold">Einkaufsliste</h2>
+            <h2 className="text-lg font-bold">{t("shoppingList.heading")}</h2>
             <p className="text-xs text-muted-foreground">
-              {openCount} offen · Antippen = gekauft
+              {t("shoppingList.openCount", { count: openCount })}
             </p>
           </div>
           <Button
@@ -311,7 +313,7 @@ export default function ShoppingList() {
             className="rounded-full bg-card"
           >
             <Copy />
-            Für WhatsApp kopieren
+            {t("shoppingList.copyForWhatsApp")}
           </Button>
           <Button
             onClick={() => openEditor({ mode: "add" })}
@@ -319,26 +321,26 @@ export default function ShoppingList() {
             className="rounded-full bg-coral font-semibold text-coral-foreground shadow-[0_6px_16px_rgb(239_107_74/0.3)] hover:bg-coral/90"
           >
             <Plus />
-            Artikel hinzufügen
+            {t("shoppingList.addItem")}
           </Button>
         </div>
 
         {busy && (
           <p className="py-6 text-center text-sm text-muted-foreground">
-            Lade Einkaufsliste …
+            {t("shoppingList.loading")}
           </p>
         )}
 
         {!busy && items.length === 0 && (
           <p className="py-6 text-center text-sm text-muted-foreground">
-            Die Liste ist noch leer. Füge den ersten Artikel hinzu.
+            {t("shoppingList.empty")}
           </p>
         )}
 
         {groups.map(([category, list]) => (
           <div key={category} className="mb-4 last:mb-0">
             <h3 className="mb-1.5 ml-1 text-[11px] font-bold tracking-[0.08em] text-foreground/70 uppercase">
-              {category}
+              {t(`categories.${category}`)}
             </h3>
             <ul className="divide-y overflow-hidden rounded-[20px] border bg-card dark:shadow-[0_2px_8px_rgb(0_0_0/0.5)]">
               {list.map((item) => (
@@ -363,7 +365,7 @@ export default function ShoppingList() {
 
       {items.length > 0 && (
         <p className="mt-[18px] text-center text-xs text-muted-foreground/70 lg:hidden">
-          Antippen = gekauft · Gedrückt halten für Details
+          {t("shoppingList.hint")}
         </p>
       )}
 
@@ -375,7 +377,7 @@ export default function ShoppingList() {
         className="fixed right-[max(16px,calc(50%-224px))] bottom-[calc(96px+env(safe-area-inset-bottom))] z-10 h-13 rounded-full bg-coral px-6 text-[15px] font-semibold text-coral-foreground shadow-[0_10px_24px_rgb(239_107_74/0.38)] hover:bg-coral/90 lg:hidden"
       >
         <Plus className="size-5" strokeWidth={2.2} />
-        Artikel
+        {t("shoppingList.addItemShort")}
       </Button>
 
       <ItemEditor
@@ -401,7 +403,7 @@ export default function ShoppingList() {
   );
 }
 
-function rank(category: string) {
+function rank(category: CategoryKey) {
   const i = CATEGORY_ORDER.indexOf(category);
   return i === -1 ? CATEGORY_ORDER.length - 1 : i;
 }
@@ -422,6 +424,8 @@ function ItemRow({
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  const t = useTranslations();
+  const locale = useLocale();
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const removeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const start = useRef<{
@@ -493,7 +497,7 @@ function ItemRow({
               style={{ width: SWIPE_ACTION_PX }}
             >
               <Trash2 className="size-5" />
-              Löschen
+              {t("shoppingList.delete")}
             </button>
           </div>
         )}
@@ -603,7 +607,7 @@ function ItemRow({
                   item.purchased && "opacity-50",
                 )}
               >
-                {formatQuantity(item.quantity, item.unit)}
+                {formatQuantity(item.quantity, t(`units.${item.unit}`), locale)}
               </span>
             </span>
 
@@ -618,7 +622,7 @@ function ItemRow({
                     type="button"
                     variant="outline"
                     size="icon-sm"
-                    aria-label="Bearbeiten"
+                    aria-label={t("shoppingList.edit")}
                     className="size-8 rounded-full bg-card"
                     onClick={(e) => {
                       e.preventDefault();
@@ -628,7 +632,9 @@ function ItemRow({
                     <Pencil className="size-3.5" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent sideOffset={6}>Bearbeiten</TooltipContent>
+                <TooltipContent sideOffset={6}>
+                  {t("shoppingList.edit")}
+                </TooltipContent>
               </Tooltip>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -636,7 +642,7 @@ function ItemRow({
                     type="button"
                     variant="outline"
                     size="icon-sm"
-                    aria-label="Löschen"
+                    aria-label={t("shoppingList.delete")}
                     className="size-8 rounded-full border-destructive/30 bg-destructive/5 text-destructive hover:bg-destructive/10 hover:text-destructive"
                     onClick={(e) => {
                       e.preventDefault();
@@ -646,7 +652,9 @@ function ItemRow({
                     <Trash2 className="size-3.5" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent sideOffset={6}>Löschen</TooltipContent>
+                <TooltipContent sideOffset={6}>
+                  {t("shoppingList.delete")}
+                </TooltipContent>
               </Tooltip>
             </span>
 
@@ -654,7 +662,7 @@ function ItemRow({
               name={item.added_by_name}
               color={item.added_by_color}
               className={cn(item.purchased && "opacity-50")}
-              title={`Hinzugefügt von ${item.added_by_name}`}
+              title={t("shoppingList.addedBy", { name: item.added_by_name })}
             />
           </label>
         </div>

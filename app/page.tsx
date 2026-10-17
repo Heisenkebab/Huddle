@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 /**
  * Initial-Setup: Mit NEXT_PUBLIC_TRIP_ID (z. B. die Demo-Reise aus seed.sql)
@@ -8,6 +9,12 @@ import { redirect } from "next/navigation";
 export default function Home() {
   const demoTrip = process.env.NEXT_PUBLIC_TRIP_ID;
   if (demoTrip) redirect(`/trip/${demoTrip}/shopping-list`);
+
+  return <HomeContent />;
+}
+
+function HomeContent() {
+  const t = useTranslations("home");
 
   return (
     <main
@@ -19,9 +26,7 @@ export default function Home() {
       }}
     >
       <h1 style={{ fontSize: 28, margin: "0 0 8px" }}>Huddle</h1>
-      <p style={{ color: "var(--muted)", margin: 0 }}>
-        Öffne deine Reise über den Einladungslink.
-      </p>
+      <p style={{ color: "var(--muted)", margin: 0 }}>{t("openTrip")}</p>
     </main>
   );
 }

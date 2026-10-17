@@ -1,5 +1,7 @@
+import { useTranslations } from "next-intl";
 import FeatureUnavailable from "@/components/FeatureUnavailable";
 
 export default function Page() {
-  return <FeatureUnavailable title="Board" />;
+  const t = useTranslations("nav");
+  return <FeatureUnavailable title={t("board")} />;
 }

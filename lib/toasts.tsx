@@ -20,7 +20,11 @@ function Pill({ icon, children }: { icon: ReactNode; children: ReactNode }) {
   );
 }
 
-export function showUndoToast(message: string, onUndo: () => void) {
+export function showUndoToast(
+  message: string,
+  undoLabel: string,
+  onUndo: () => void,
+) {
   toast.custom(
     (id) => (
       <Pill icon={<Trash2 />}>
@@ -33,7 +37,7 @@ export function showUndoToast(message: string, onUndo: () => void) {
             onUndo();
           }}
         >
-          Rückgängig
+          {undoLabel}
         </button>
       </Pill>
     ),

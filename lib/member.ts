@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+export const GUEST_NAME = "Gast";
+
 export type Member = { id: string; name: string; color: string };
 
 const STORAGE_KEY = "huddle.member";
@@ -28,13 +30,13 @@ function randomId(): string {
 
 /**
  * Anzeigename bleibt auf dem Gerät gespeichert (localStorage).
- * Initial-Setup: ohne gespeicherten Namen wird "Gast" verwendet –
+ * Initial-Setup: ohne gespeicherten Namen wird GUEST_NAME verwendet –
  * der Beitritt per Link mit Namenseingabe folgt in der Story "Reisezugang".
  */
 export function useMember(): Member {
   const [member, setMember] = useState<Member>({
     id: "ssr",
-    name: "Gast",
+    name: GUEST_NAME,
     color: AVATAR_COLORS[0],
   });
 
@@ -54,13 +56,17 @@ export function useMember(): Member {
       }
       const fresh: Member = {
         id: randomId(),
-        name: "Gast",
-        color: colorFor("Gast"),
+        name: GUEST_NAME,
+        color: colorFor(GUEST_NAME),
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(fresh));
       setMember(fresh);
     } catch {
-      setMember({ id: randomId(), name: "Gast", color: colorFor("Gast") });
+      setMember({
+        id: randomId(),
+        name: GUEST_NAME,
+        color: colorFor(GUEST_NAME),
+      });
     }
   }, []);
 

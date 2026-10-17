@@ -1,12 +1,10 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { getSupabase, isTripId } from "@/lib/supabase";
-import { useMember, type Member } from "@/lib/member";
+import { GUEST_NAME, useMember, type Member } from "@/lib/member";
 import type { Person, Trip } from "@/lib/types";
-
-export const NOT_FOUND =
-  "Reise nicht gefunden. Bitte prüfe den Einladungslink.";
 
 type Author = { name: string; color: string };
 
@@ -56,6 +54,7 @@ export function TripProvider({
   tripId: string;
   children: React.ReactNode;
 }) {
+  const t = useTranslations("trip");
   const member = useMember();
   const [trip, setTrip] = useState<Trip | null>(null);
   const [loading, setLoading] = useState(true);
@@ -74,7 +73,7 @@ export function TripProvider({
   /* Reise laden */
   useEffect(() => {
     if (!isTripId(tripId)) {
-      enterLocalMode(NOT_FOUND);
+      enterLocalMode(t("notFound"));
       setLoading(false);
       return;
     }
@@ -88,7 +87,7 @@ export function TripProvider({
           .maybeSingle();
         if (cancelled) return;
         if (error) throw error;
-        if (!data) throw new Error(NOT_FOUND);
+        if (!data) throw new Error(t("notFound"));
         setTrip({
           id: data.id,
           name: data.name ?? "",
@@ -96,8 +95,7 @@ export function TripProvider({
           end_date: data.end_date ?? null,
         });
       } catch (e) {
-        if (!cancelled)
-          enterLocalMode(errorMessage(e, "Reise konnte nicht geladen werden."));
+        if (!cancelled) enterLocalMode(errorMessage(e, t("loadFailed")));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -105,6 +103,7 @@ export function TripProvider({
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tripId]);
 
   /* Wer ist gerade online (Supabase Presence) */
@@ -125,7 +124,7 @@ export function TripProvider({
         setOnline(
           Object.entries(state).map(([key, metas]) => ({
             key,
-            name: metas[0]?.name ?? "Gast",
+            name: metas[0]?.name ?? GUEST_NAME,
             color: metas[0]?.color ?? "#999",
           })),
         );
@@ -171,8 +170,10 @@ export function TripProvider({
         isMe: false,
       });
     }
-    return list;
-  }, [member, online, authors]);
+    return list.map((p) =>
+      p.name === GUEST_NAME ? { ...p, name: t("guest") } : p,
+    );
+  }, [member, online, authors, t]);
 
   const value: TripContextValue = {
     tripId,

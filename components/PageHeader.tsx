@@ -1,12 +1,15 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useTrip } from "@/lib/trip-context";
 import { Badge } from "@/components/ui/badge";
 import PersonAvatar from "./PersonAvatar";
+import { LanguageToggleButton } from "./LanguageSwitcher";
 import { ThemeToggleButton } from "./ThemeToggle";
 
 export default function PageHeader({ title }: { title: string }) {
   const { trip, people, onlineCount } = useTrip();
+  const t = useTranslations("trip");
   const online = people.filter((p) => p.online).slice(0, 4);
 
   return (
@@ -26,7 +29,7 @@ export default function PageHeader({ title }: { title: string }) {
                 name={p.name}
                 color={p.color}
                 size={26}
-                title={p.isMe ? `${p.name} (du)` : p.name}
+                title={p.isMe ? `${p.name} (${t("you")})` : p.name}
                 className="ring-2 ring-background"
               />
             ))}
@@ -36,8 +39,9 @@ export default function PageHeader({ title }: { title: string }) {
             className="gap-1.5 rounded-full px-2.5 py-1 font-semibold text-primary"
           >
             <span className="size-1.5 rounded-full bg-primary" />
-            {onlineCount} online
+            {t("onlineCount", { count: onlineCount })}
           </Badge>
+          <LanguageToggleButton className="lg:hidden" />
           <ThemeToggleButton className="lg:hidden" />
         </div>
       </div>

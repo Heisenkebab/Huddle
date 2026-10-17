@@ -1,11 +1,16 @@
-const numberFormat = new Intl.NumberFormat("de-DE", {
-  maximumFractionDigits: 3,
-  useGrouping: false,
-});
+export function formatNumber(n: number, locale: string): string {
+  return new Intl.NumberFormat(locale, {
+    maximumFractionDigits: 3,
+    useGrouping: false,
+  }).format(n);
+}
 
-/** 1.5 → "1,5" */
-export function formatNumber(n: number): string {
-  return numberFormat.format(n);
+export function decimalSeparator(locale: string): string {
+  return (
+    new Intl.NumberFormat(locale)
+      .formatToParts(1.5)
+      .find((p) => p.type === "decimal")?.value ?? "."
+  );
 }
 
 /** "1,5" oder "1.5" → 1.5; ungültig → null */
@@ -16,27 +21,28 @@ export function parseNumber(text: string): number | null {
   return Number(cleaned);
 }
 
-/** 2 + "l" → "2 l" */
 export function formatQuantity(
   quantity: number | null,
   unit: string | null,
+  locale: string,
 ): string {
   if (quantity == null) return unit ?? "";
-  return unit ? `${formatNumber(quantity)} ${unit}` : formatNumber(quantity);
+  const n = formatNumber(quantity, locale);
+  return unit ? `${n} ${unit}` : n;
 }
 
-/** → "Fr, 12. Juni, 14:20" */
-export function formatAddedAt(iso: string): string {
+export function formatAddedAt(iso: string, locale: string): string {
   const d = new Date(iso);
-  const weekday = d
-    .toLocaleDateString("de-DE", { weekday: "short" })
-    .replace(".", "");
-  const month = d.toLocaleDateString("de-DE", { month: "long" });
-  const time = d.toLocaleTimeString("de-DE", {
+  const date = d.toLocaleDateString(locale, {
+    weekday: "short",
+    day: "numeric",
+    month: "long",
+  });
+  const time = d.toLocaleTimeString(locale, {
     hour: "2-digit",
     minute: "2-digit",
   });
-  return `${weekday}, ${d.getDate()}. ${month}, ${time}`;
+  return `${date}, ${time}`;
 }
 
 const isSmallUnit = (unit: string | null) => unit === "g" || unit === "ml";
@@ -66,18 +72,17 @@ export function stepForUnit(unit: string | null): number {
   }
 }
 
-/** "2026-06-12", "2026-06-14" → "12.–14. Juni" */
 export function formatTripDates(
   start: string | null,
   end: string | null,
+  locale: string,
 ): string {
   if (!start) return "";
+  const format = new Intl.DateTimeFormat(locale, {
+    day: "numeric",
+    month: "long",
+  });
   const s = new Date(`${start}T00:00:00`);
-  const month = (d: Date) => d.toLocaleDateString("de-DE", { month: "long" });
-  if (!end || end === start) return `${s.getDate()}. ${month(s)}`;
-  const e = new Date(`${end}T00:00:00`);
-  if (s.getMonth() === e.getMonth() && s.getFullYear() === e.getFullYear()) {
-    return `${s.getDate()}.–${e.getDate()}. ${month(e)}`;
-  }
-  return `${s.getDate()}. ${month(s)} – ${e.getDate()}. ${month(e)}`;
+  if (!end || end === start) return format.format(s);
+  return format.formatRange(s, new Date(`${end}T00:00:00`));
 }

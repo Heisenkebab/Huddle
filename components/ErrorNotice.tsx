@@ -1,4 +1,5 @@
 import { Coffee } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
@@ -7,12 +8,13 @@ export const ERROR_CODE = "418";
 export const ERROR_MESSAGE = "I'm a teapot";
 
 export default function ErrorNotice({
-  text = "Diese Funktion ist derzeit nicht verfügbar.",
+  text,
   className,
 }: {
   text?: string;
   className?: string;
 }) {
+  const t = useTranslations("errors");
   return (
     <Card
       role="status"
@@ -25,7 +27,7 @@ export default function ErrorNotice({
         <span className="mb-2 grid size-14 place-items-center rounded-full bg-secondary text-primary">
           <Coffee className="size-7" strokeWidth={1.8} />
         </span>
-        <p className="font-semibold">{text}</p>
+        <p className="font-semibold">{text ?? t("featureUnavailable")}</p>
         <p className="text-sm text-muted-foreground">
           Error {ERROR_CODE} - {ERROR_MESSAGE}
         </p>

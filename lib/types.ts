@@ -1,10 +1,33 @@
+export const CATEGORIES = [
+  "produce",
+  "chilled",
+  "bakery",
+  "drinks",
+  "bbq",
+  "other",
+] as const;
+export type CategoryKey = (typeof CATEGORIES)[number];
+
+/** Reihenfolge der Abschnitte in der Liste (wie im Laden). */
+export const CATEGORY_ORDER: CategoryKey[] = [
+  "produce",
+  "chilled",
+  "bakery",
+  "bbq",
+  "drinks",
+  "other",
+];
+
+export const UNITS = ["pcs", "kg", "g", "l", "ml"] as const;
+export type UnitKey = (typeof UNITS)[number];
+
 export type ShoppingItem = {
   id: string;
   trip_id: string;
   name: string;
   quantity: number;
-  unit: string;
-  category: string | null;
+  unit: UnitKey;
+  category: CategoryKey;
   /** Wird im MVP später über das Detail-Popup gepflegt – aktuell nicht im UI. */
   description: string | null;
   purchased: boolean;
@@ -16,30 +39,9 @@ export type ShoppingItem = {
 export type ShoppingItemInput = {
   name: string;
   quantity: number;
-  unit: string;
-  category: string | null;
+  unit: UnitKey;
+  category: CategoryKey;
 };
-
-export const CATEGORIES = [
-  "Obst & Gemüse",
-  "Kühlregal",
-  "Backwaren",
-  "Getränke",
-  "Grillen",
-  "Sonstiges",
-] as const;
-
-/** Reihenfolge der Abschnitte in der Liste (wie im Laden). */
-export const CATEGORY_ORDER = [
-  "Obst & Gemüse",
-  "Kühlregal",
-  "Backwaren",
-  "Grillen",
-  "Getränke",
-  "Sonstiges",
-];
-
-export const UNITS = ["Stück", "kg", "g", "l", "ml"] as const;
 
 export type Trip = {
   id: string;

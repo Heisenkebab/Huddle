@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useTrip } from "@/lib/trip-context";
 import { tripPath } from "@/lib/supabase";
 import { NAV_ITEMS } from "@/lib/nav";
@@ -11,13 +12,14 @@ import { cn } from "@/lib/utils";
 export default function TabBar() {
   const pathname = usePathname();
   const { tripId } = useTrip();
+  const t = useTranslations("nav");
 
   return (
     <nav
-      aria-label="Hauptnavigation"
+      aria-label={t("label")}
       className="fixed inset-x-3 bottom-[calc(12px+env(safe-area-inset-bottom))] z-20 mx-auto grid max-w-[456px] grid-cols-5 rounded-full border bg-card/95 p-1.5 shadow-[0_10px_30px_rgb(30_28_24/0.12)] backdrop-blur lg:hidden"
     >
-      {NAV_ITEMS.map(({ section, label, Icon }) => {
+      {NAV_ITEMS.map(({ section, Icon }) => {
         const href = tripPath(tripId, section);
         const active = pathname.startsWith(href);
         return (
@@ -33,7 +35,7 @@ export default function TabBar() {
             )}
           >
             <Icon className="size-5" strokeWidth={1.8} />
-            {label}
+            {t(section)}
           </Link>
         );
       })}

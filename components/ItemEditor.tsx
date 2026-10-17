@@ -2,7 +2,9 @@
 
 import { useState, type ComponentType, type ReactNode } from "react";
 import { Check, Info, Minus, Plus, Tag, Trash2, X } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import {
+  decimalSeparator,
   formatAddedAt,
   formatNumber,
   parseNumber,
@@ -12,8 +14,10 @@ import {
 import {
   CATEGORIES,
   UNITS,
+  type CategoryKey,
   type ShoppingItem,
   type ShoppingItemInput,
+  type UnitKey,
 } from "@/lib/types";
 import { DESKTOP_QUERY, useMediaQuery } from "@/lib/use-media-query";
 import { cn } from "@/lib/utils";
@@ -105,24 +109,21 @@ function ItemForm({
   Description,
   Close,
 }: FormProps) {
+  const t = useTranslations();
+  const locale = useLocale();
   const item = target.mode === "edit" ? target.item : undefined;
   const isDialog = layout === "dialog";
 
   const [name, setName] = useState(item?.name ?? "");
   const [qtyText, setQtyText] = useState(
-    item ? formatNumber(item.quantity) : "1",
+    item ? formatNumber(item.quantity, locale) : "1",
   );
-  const [unit, setUnit] = useState<string>(item?.unit ?? "Stück");
-  const [category, setCategory] = useState<string>(
-    item?.category ?? "Sonstiges",
+  const [unit, setUnit] = useState<UnitKey>(item?.unit ?? "pcs");
+  const [category, setCategory] = useState<CategoryKey>(
+    item?.category ?? "other",
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Eigene Einheiten aus bestehenden Artikeln (z. B. "Kisten") zusätzlich anzeigen
-  const unitOptions: string[] = [...UNITS];
-  if (item?.unit && !unitOptions.includes(item.unit))
-    unitOptions.push(item.unit);
 
   const qty = parseNumber(qtyText);
   // Pflichtfeld: größer 0, höchstens zwei Nachkommastellen
@@ -134,17 +135,15 @@ function ItemForm({
       step,
       Math.round(((qty ?? 0) + dir * step) * 1000) / 1000,
     );
-    setQtyText(formatNumber(next));
+    setQtyText(formatNumber(next, locale));
   };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = name.trim();
-    if (!trimmed) return setError("Bitte gib einen Artikel ein.");
+    if (!trimmed) return setError(t("itemEditor.nameRequired"));
     if (qtyInvalid || qty === null)
-      return setError(
-        "Bitte gib eine Menge größer 0 mit höchstens zwei Nachkommastellen ein.",
-      );
+      return setError(t("itemEditor.quantityInvalid"));
     setSaving(true);
     setError(null);
     try {
@@ -161,8 +160,8 @@ function ItemForm({
         "message" in err &&
         typeof err.message === "string"
           ? err.message
-          : "Bitte versuche es erneut.";
-      setError(`Speichern fehlgeschlagen: ${message}`);
+          : t("itemEditor.tryAgain");
+      setError(t("itemEditor.saveFailed", { message }));
       setSaving(false);
     }
   };
@@ -171,19 +170,21 @@ function ItemForm({
     <ToggleGroup
       type="single"
       spacing={2}
-      value={unit ?? ""}
-      onValueChange={(v) => {
+      value={unit}
+      onValueChange={(value) => {
+        const v = value as UnitKey;
         if (!v || v === unit) return;
         setUnit(v);
         const next = quantityAfterUnitChange(qty, unit, v);
-        if (next !== qty && next != null) setQtyText(formatNumber(next));
+        if (next !== qty && next != null)
+          setQtyText(formatNumber(next, locale));
       }}
-      aria-label="Einheit"
+      aria-label={t("itemEditor.unit")}
       className="flex-wrap"
     >
-      {unitOptions.map((u) => (
+      {UNITS.map((u) => (
         <ToggleGroupItem key={u} value={u} className={`${chipClass} min-w-9`}>
-          {u}
+          {t(`units.${u}`)}
         </ToggleGroupItem>
       ))}
     </ToggleGroup>
@@ -208,8 +209,8 @@ function ItemForm({
         <div className="flex flex-col gap-1 text-left">
           <Title className="text-[19px] leading-tight font-bold">
             {target.mode === "add"
-              ? "Artikel hinzufügen"
-              : "Artikel bearbeiten"}
+              ? t("itemEditor.addTitle")
+              : t("itemEditor.editTitle")}
           </Title>
           {item ? (
             <Description className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
@@ -218,12 +219,12 @@ function ItemForm({
                 color={item.added_by_color}
                 size={14}
               />
-              Hinzugefügt von {item.added_by_name} ·{" "}
-              {formatAddedAt(item.created_at)}
+              {t("itemEditor.addedBy", { name: item.added_by_name })} ·{" "}
+              {formatAddedAt(item.created_at, locale)}
             </Description>
           ) : (
             <Description className="sr-only">
-              Neuen Artikel zur Einkaufsliste hinzufügen
+              {t("itemEditor.addDescription")}
             </Description>
           )}
         </div>
@@ -233,7 +234,7 @@ function ItemForm({
             variant="outline"
             size="icon"
             className="rounded-full bg-card"
-            aria-label="Schließen"
+            aria-label={t("itemEditor.close")}
           >
             <X />
           </Button>
@@ -245,7 +246,7 @@ function ItemForm({
         htmlFor="item-name"
         className="mt-4 mb-2 text-[13px] font-semibold"
       >
-        Artikel
+        {t("itemEditor.name")}
       </Label>
       <div className="relative">
         <Tag className="pointer-events-none absolute top-1/2 left-3.5 size-[18px] -translate-y-1/2 text-muted-foreground" />
@@ -253,7 +254,7 @@ function ItemForm({
           id="item-name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="z. B. Milch"
+          placeholder={t("itemEditor.namePlaceholder")}
           autoComplete="off"
           enterKeyHint="done"
           maxLength={80}
@@ -264,7 +265,7 @@ function ItemForm({
 
       {/* Menge (+ Einheit daneben am Laptop) */}
       <Label id="qty-label" className="mt-4 mb-2 text-[13px] font-semibold">
-        Menge
+        {t("itemEditor.quantity")}
       </Label>
       <div className={cn(isDialog && "flex flex-wrap items-center gap-3")}>
         <div
@@ -278,21 +279,20 @@ function ItemForm({
             size="icon-sm"
             className="rounded-xl bg-card"
             onClick={() => stepQty(-1)}
-            aria-label="Weniger"
+            aria-label={t("itemEditor.less")}
           >
             <Minus />
           </Button>
           <Input
             value={qtyText}
             onChange={(e) => {
-              // Punkt wird als Komma übernommen, mehr als zwei Nachkommastellen lassen sich nicht tippen
               const next = e.target.value
                 .replace(/[^\d.,]/g, "")
-                .replace(/\./g, ",");
-              if (/^\d*(,\d{0,2})?$/.test(next)) setQtyText(next);
+                .replace(/[.,]/g, decimalSeparator(locale));
+              if (/^\d*([.,]\d{0,2})?$/.test(next)) setQtyText(next);
             }}
             inputMode="decimal"
-            aria-label="Menge"
+            aria-label={t("itemEditor.quantity")}
             aria-invalid={qtyInvalid}
             className="h-9 w-[72px] rounded-xl border-[1.5px] border-primary bg-card text-center text-base font-bold md:text-base"
           />
@@ -301,7 +301,7 @@ function ItemForm({
             size="icon-sm"
             className="rounded-xl"
             onClick={() => stepQty(1)}
-            aria-label="Mehr"
+            aria-label={t("itemEditor.more")}
           >
             <Plus />
           </Button>
@@ -310,23 +310,25 @@ function ItemForm({
       </div>
       <p className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground">
         <Info className="size-3.5" />
-        Kommazahlen möglich, z. B. 0,5 kg oder 1,5 l
+        {t("itemEditor.decimalsHint")}
       </p>
 
       {/* Kategorie */}
-      <Label className="mt-4 mb-2 text-[13px] font-semibold">Kategorie</Label>
+      <Label className="mt-4 mb-2 text-[13px] font-semibold">
+        {t("itemEditor.category")}
+      </Label>
       <ToggleGroup
         type="single"
         spacing={2}
         value={category}
         // Abwählen nicht erlaubt: es ist immer eine Kategorie gesetzt
-        onValueChange={(v) => v && setCategory(v)}
-        aria-label="Kategorie"
+        onValueChange={(v) => v && setCategory(v as CategoryKey)}
+        aria-label={t("itemEditor.category")}
         className="flex-wrap"
       >
         {CATEGORIES.map((c) => (
           <ToggleGroupItem key={c} value={c} className={chipClass}>
-            {c}
+            {t(`categories.${c}`)}
           </ToggleGroupItem>
         ))}
       </ToggleGroup>
@@ -346,7 +348,7 @@ function ItemForm({
             )}
           >
             <Trash2 className="size-4" />
-            Löschen
+            {t("itemEditor.delete")}
           </Button>
         )}
         {isDialog && (
@@ -356,7 +358,7 @@ function ItemForm({
               variant="outline"
               className="ml-auto h-10 rounded-full bg-card px-5 font-semibold"
             >
-              Abbrechen
+              {t("itemEditor.cancel")}
             </Button>
           </Close>
         )}
@@ -371,10 +373,10 @@ function ItemForm({
         >
           <Check className="size-4" strokeWidth={2.4} />
           {saving
-            ? "Speichert …"
+            ? t("itemEditor.saving")
             : target.mode === "add"
-              ? "Hinzufügen"
-              : "Speichern"}
+              ? t("itemEditor.add")
+              : t("itemEditor.save")}
         </Button>
       </div>
     </form>

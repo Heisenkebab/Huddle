@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
+import { useTranslations } from "next-intl";
 import { Monitor, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,14 +13,15 @@ import {
 import { cn } from "@/lib/utils";
 
 const MODES = [
-  { value: "system", label: "System", Icon: Monitor },
-  { value: "light", label: "Hell", Icon: Sun },
-  { value: "dark", label: "Dunkel", Icon: Moon },
+  { value: "system", Icon: Monitor },
+  { value: "light", Icon: Sun },
+  { value: "dark", Icon: Moon },
 ] as const;
 
 /** Kompakter Umschalter (Handy-Kopfzeile): ein Button, schaltet System → Hell → Dunkel durch. */
 export function ThemeToggleButton({ className }: { className?: string }) {
   const { theme, setTheme } = useTheme();
+  const t = useTranslations("theme");
   const mounted = useMounted();
   // Vor dem Mounten ist das gespeicherte Theme unbekannt → Server und Browser rendern identisch ("System")
   const index = mounted
@@ -39,14 +41,17 @@ export function ThemeToggleButton({ className }: { className?: string }) {
           variant="outline"
           size="icon-sm"
           className={cn("rounded-full bg-card", className)}
-          aria-label={`Darstellung: ${current.label}. Wechseln zu ${next.label}`}
+          aria-label={t("toggle", {
+            current: t(current.value),
+            next: t(next.value),
+          })}
           onClick={() => setTheme(next.value)}
         >
           <current.Icon />
         </Button>
       </TooltipTrigger>
       <TooltipContent sideOffset={6}>
-        Darstellung: {current.label}
+        {t("current", { current: t(current.value) })}
       </TooltipContent>
     </Tooltip>
   );
@@ -55,6 +60,7 @@ export function ThemeToggleButton({ className }: { className?: string }) {
 /** Segment-Umschalter (Laptop-Sidebar): System · Hell · Dunkel, mit gleitendem Schalter. */
 export function ThemeSegmented({ className }: { className?: string }) {
   const { theme, setTheme } = useTheme();
+  const t = useTranslations("theme");
   const mounted = useMounted();
   const index = mounted
     ? Math.max(
@@ -66,7 +72,7 @@ export function ThemeSegmented({ className }: { className?: string }) {
   return (
     <div
       role="radiogroup"
-      aria-label="Darstellung"
+      aria-label={t("label")}
       className={cn(
         "relative grid grid-cols-3 rounded-full border bg-muted p-1",
         className,
@@ -81,7 +87,7 @@ export function ThemeSegmented({ className }: { className?: string }) {
         )}
         style={{ transform: `translateX(${Math.max(index, 0) * 100}%)` }}
       />
-      {MODES.map(({ value, label, Icon }, i) => {
+      {MODES.map(({ value, Icon }, i) => {
         const active = i === index;
         return (
           <button
@@ -96,7 +102,7 @@ export function ThemeSegmented({ className }: { className?: string }) {
             )}
           >
             <Icon className="size-3.5 shrink-0" />
-            {label}
+            {t(value)}
           </button>
         );
       })}

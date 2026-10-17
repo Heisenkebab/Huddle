@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Link2 } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import { useTrip } from "@/lib/trip-context";
 import { tripPath } from "@/lib/supabase";
 import { NAV_ITEMS } from "@/lib/nav";
@@ -12,25 +13,27 @@ import { showInfoToast } from "@/lib/toasts";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import PersonAvatar from "./PersonAvatar";
+import { LanguageSegmented } from "./LanguageSwitcher";
 import { ThemeSegmented } from "./ThemeToggle";
 
 /** Laptop: Navigation links (Entwurf LE1). Mobil ausgeblendet. */
 export default function Sidebar() {
   const pathname = usePathname();
   const { tripId, trip, people } = useTrip();
+  const t = useTranslations();
+  const locale = useLocale();
 
-  const tripName = trip?.name || "Reise";
-  const dates = trip ? formatTripDates(trip.start_date, trip.end_date) : "";
-  const meta = [
-    dates,
-    `${people.length} ${people.length === 1 ? "Person" : "Personen"}`,
-  ]
+  const tripName = trip?.name || t("trip.fallbackName");
+  const dates = trip
+    ? formatTripDates(trip.start_date, trip.end_date, locale)
+    : "";
+  const meta = [dates, t("trip.people", { count: people.length })]
     .filter(Boolean)
     .join(" · ");
 
   const copyInvite = async () => {
     const ok = await copyText(`${window.location.origin}/trip/${tripId}`);
-    showInfoToast(ok ? "Einladungslink kopiert" : "Kopieren nicht möglich");
+    showInfoToast(ok ? t("trip.inviteCopied") : t("trip.copyFailed"));
   };
 
   return (
@@ -45,8 +48,8 @@ export default function Sidebar() {
         </div>
       </div>
 
-      <nav aria-label="Hauptnavigation" className="flex flex-col gap-1">
-        {NAV_ITEMS.map(({ section, label, Icon }) => {
+      <nav aria-label={t("nav.label")} className="flex flex-col gap-1">
+        {NAV_ITEMS.map(({ section, Icon }) => {
           const href = tripPath(tripId, section);
           const active = pathname.startsWith(href);
           return (
@@ -62,7 +65,7 @@ export default function Sidebar() {
               )}
             >
               <Icon className="size-[18px]" strokeWidth={1.8} />
-              {label}
+              {t(`nav.${section}`)}
             </Link>
           );
         })}
@@ -70,7 +73,7 @@ export default function Sidebar() {
 
       <div className="mt-auto">
         <p className="mb-2 px-1 text-[11px] font-bold tracking-[0.08em] text-muted-foreground uppercase">
-          Mitreisende · {people.length}
+          {t("trip.travelers", { count: people.length })}
         </p>
         <ul className="mb-6 flex max-h-[40dvh] flex-col gap-1 overflow-y-auto">
           {people.map((p) => (
@@ -81,29 +84,38 @@ export default function Sidebar() {
               <PersonAvatar name={p.name} color={p.color} size={22} />
               <span className="flex-1 truncate">
                 {p.name}
-                {p.isMe && <span className="text-muted-foreground"> (du)</span>}
+                {p.isMe && (
+                  <span className="text-muted-foreground">
+                    {" "}
+                    ({t("trip.you")})
+                  </span>
+                )}
               </span>
               <span
                 className={cn(
                   "size-1.5 rounded-full",
                   p.online ? "bg-emerald-500" : "bg-border",
                 )}
-                aria-label={p.online ? "online" : "offline"}
+                aria-label={p.online ? t("trip.online") : t("trip.offline")}
               />
             </li>
           ))}
         </ul>
         <p className="mb-2 px-1 text-[11px] font-bold tracking-[0.08em] text-muted-foreground uppercase">
-          Darstellung
+          {t("theme.label")}
         </p>
         <ThemeSegmented className="mb-5" />
+        <p className="mb-2 px-1 text-[11px] font-bold tracking-[0.08em] text-muted-foreground uppercase">
+          {t("language.label")}
+        </p>
+        <LanguageSegmented className="mb-5" />
         <Button
           variant="outline"
           onClick={copyInvite}
           className="w-full rounded-full bg-card font-semibold text-primary hover:text-primary"
         >
           <Link2 />
-          Einladungslink kopieren
+          {t("trip.copyInvite")}
         </Button>
       </div>
     </aside>

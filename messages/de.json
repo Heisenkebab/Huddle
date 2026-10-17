@@ -1,0 +1,114 @@
+{
+  "metadata": {
+    "description": "Einkauf, Aufgaben und Kosten für eure Gruppenreise"
+  },
+  "home": {
+    "openTrip": "Öffne deine Reise über den Einladungslink."
+  },
+  "nav": {
+    "label": "Hauptnavigation",
+    "shopping-list": "Einkauf",
+    "tasks": "Aufgaben",
+    "board": "Board",
+    "expenses": "Ausgaben",
+    "invoice": "Abrechnung"
+  },
+  "theme": {
+    "label": "Darstellung",
+    "system": "System",
+    "light": "Hell",
+    "dark": "Dunkel",
+    "current": "Darstellung: {current}",
+    "toggle": "Darstellung: {current}. Wechseln zu {next}"
+  },
+  "language": {
+    "label": "Sprache",
+    "de": "Deutsch",
+    "en": "English",
+    "switchTo": "Sprache wechseln zu {language}"
+  },
+  "errors": {
+    "featureUnavailable": "Diese Funktion ist derzeit nicht verfügbar.",
+    "pageNotFound": "Diese Seite gibt es (noch) nicht.",
+    "notFoundTitle": "Nicht gefunden"
+  },
+  "trip": {
+    "fallbackName": "Reise",
+    "people": "{count, plural, one {# Person} other {# Personen}}",
+    "travelers": "Mitreisende · {count}",
+    "you": "du",
+    "guest": "Gast",
+    "online": "online",
+    "offline": "offline",
+    "onlineCount": "{count} online",
+    "copyInvite": "Einladungslink kopieren",
+    "inviteCopied": "Einladungslink kopiert",
+    "copyFailed": "Kopieren nicht möglich",
+    "notFound": "Reise nicht gefunden. Bitte prüfe den Einladungslink.",
+    "loadFailed": "Reise konnte nicht geladen werden."
+  },
+  "shoppingList": {
+    "title": "Einkauf",
+    "heading": "Einkaufsliste",
+    "openCount": "{count} offen · Antippen = gekauft",
+    "copyForWhatsApp": "Für WhatsApp kopieren",
+    "addItem": "Artikel hinzufügen",
+    "addItemShort": "Artikel",
+    "loading": "Lade Einkaufsliste …",
+    "empty": "Die Liste ist noch leer. Füge den ersten Artikel hinzu.",
+    "hint": "Antippen = gekauft · Gedrückt halten für Details",
+    "loadFailed": "Liste konnte nicht geladen werden.",
+    "saveFailed": "Änderung konnte nicht gespeichert werden.",
+    "deleteFailed": "Artikel konnte nicht gelöscht werden.",
+    "restoreFailed": "Wiederherstellen fehlgeschlagen.",
+    "deleted": "„{name}“ gelöscht",
+    "edit": "Bearbeiten",
+    "delete": "Löschen",
+    "addedBy": "Hinzugefügt von {name}",
+    "whatsAppTitle": "Einkaufsliste",
+    "allDone": "Alles erledigt ✅",
+    "copiedForWhatsApp": "Liste für WhatsApp kopiert"
+  },
+  "itemEditor": {
+    "addTitle": "Artikel hinzufügen",
+    "editTitle": "Artikel bearbeiten",
+    "addDescription": "Neuen Artikel zur Einkaufsliste hinzufügen",
+    "addedBy": "Hinzugefügt von {name}",
+    "close": "Schließen",
+    "name": "Artikel",
+    "namePlaceholder": "z. B. Milch",
+    "quantity": "Menge",
+    "less": "Weniger",
+    "more": "Mehr",
+    "unit": "Einheit",
+    "decimalsHint": "Kommazahlen möglich, z. B. 0,5 kg oder 1,5 l",
+    "category": "Kategorie",
+    "delete": "Löschen",
+    "cancel": "Abbrechen",
+    "saving": "Speichert …",
+    "add": "Hinzufügen",
+    "save": "Speichern",
+    "nameRequired": "Bitte gib einen Artikel ein.",
+    "quantityInvalid": "Bitte gib eine Menge größer 0 mit höchstens zwei Nachkommastellen ein.",
+    "saveFailed": "Speichern fehlgeschlagen: {message}",
+    "tryAgain": "Bitte versuche es erneut."
+  },
+  "toasts": {
+    "undo": "Rückgängig"
+  },
+  "categories": {
+    "produce": "Obst & Gemüse",
+    "chilled": "Kühlregal",
+    "bakery": "Backwaren",
+    "drinks": "Getränke",
+    "bbq": "Grillen",
+    "other": "Sonstiges"
+  },
+  "units": {
+    "pcs": "Stück",
+    "kg": "kg",
+    "g": "g",
+    "l": "l",
+    "ml": "ml"
+  }
+}

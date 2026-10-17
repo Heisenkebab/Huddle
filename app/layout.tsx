@@ -1,13 +1,18 @@
 import type { Metadata, Viewport } from "next";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getTranslations } from "next-intl/server";
 import AppToaster from "@/components/AppToaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import ThemeProvider from "@/components/ThemeProvider";
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: "Huddle",
-  description: "Einkauf, Aufgaben und Kosten für eure Gruppenreise",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("metadata");
+  return {
+    title: "Huddle",
+    description: t("description"),
+  };
+}
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -19,18 +24,22 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const locale = await getLocale();
+
   return (
-    <html lang="de" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <body>
-        <ThemeProvider>
-          <TooltipProvider delayDuration={300}>{children}</TooltipProvider>
-          <AppToaster />
-        </ThemeProvider>
+        <NextIntlClientProvider>
+          <ThemeProvider>
+            <TooltipProvider delayDuration={300}>{children}</TooltipProvider>
+            <AppToaster />
+          </ThemeProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );
