@@ -6,6 +6,7 @@ import {
   formatAddedAt,
   formatNumber,
   parseNumber,
+  quantityAfterUnitChange,
   stepForUnit,
 } from "@/lib/format";
 import {
@@ -45,6 +46,8 @@ type Props = {
   target: EditorTarget;
   onSave: (values: ShoppingItemInput) => Promise<void>;
   onDelete?: () => void;
+  /** Eigene Kategorien, die schon in der Liste vorkommen */
+  extraCategories?: string[];
 };
 
 /** Mobil: Bottom Sheet (Drawer). Laptop: zentrierter Dialog. */
@@ -99,6 +102,7 @@ function ItemForm({
   target,
   onSave,
   onDelete,
+  extraCategories = [],
   layout,
   Title,
   Description,
@@ -115,6 +119,10 @@ function ItemForm({
   const [category, setCategory] = useState<string | null>(
     item?.category ?? null,
   );
+  // In diesem Popup mit "Neu" angelegte Kategorien
+  const [ownCategories, setOwnCategories] = useState<string[]>([]);
+  // null = Eingabefeld für eine neue Kategorie ist zu
+  const [newCategory, setNewCategory] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -123,8 +131,32 @@ function ItemForm({
   if (item?.unit && !unitOptions.includes(item.unit))
     unitOptions.push(item.unit);
 
+  const categoryOptions = [
+    ...new Set<string>([
+      ...CATEGORIES,
+      ...extraCategories,
+      ...(item?.category ? [item.category] : []),
+      ...ownCategories,
+    ]),
+  ];
+
+  const addCategory = () => {
+    const trimmed = newCategory?.trim();
+    setNewCategory(null);
+    if (!trimmed) return;
+    // Groß-/Kleinschreibung egal: vorhandene Kategorie wiederverwenden
+    const existing = categoryOptions.find(
+      (c) => c.toLowerCase() === trimmed.toLowerCase(),
+    );
+    if (!existing) setOwnCategories((prev) => [...prev, trimmed]);
+    setCategory(existing ?? trimmed);
+  };
+
   const qty = parseNumber(qtyText);
-  const qtyInvalid = qtyText.trim() !== "" && qty === null;
+  // Erlaubt: größer 0, höchstens zwei Nachkommastellen
+  const qtyInvalid =
+    qtyText.trim() !== "" &&
+    (qty === null || qty <= 0 || /[.,]\d{3,}$/.test(qtyText));
 
   const stepQty = (dir: 1 | -1) => {
     const step = stepForUnit(unit);
@@ -139,7 +171,10 @@ function ItemForm({
     e.preventDefault();
     const trimmed = name.trim();
     if (!trimmed) return setError("Bitte gib einen Artikel ein.");
-    if (qtyInvalid) return setError("Die Menge ist keine gültige Zahl.");
+    if (qtyInvalid)
+      return setError(
+        "Die Menge muss größer 0 sein und darf höchstens zwei Nachkommastellen haben.",
+      );
     setSaving(true);
     setError(null);
     try {
@@ -167,7 +202,12 @@ function ItemForm({
       type="single"
       spacing={2}
       value={unit ?? ""}
-      onValueChange={(v) => v && setUnit(v)}
+      onValueChange={(v) => {
+        if (!v || v === unit) return;
+        setUnit(v);
+        const next = quantityAfterUnitChange(qty, unit, v);
+        if (next !== qty && next != null) setQtyText(formatNumber(next));
+      }}
       aria-label="Einheit"
       className="flex-wrap"
     >
@@ -274,7 +314,13 @@ function ItemForm({
           </Button>
           <Input
             value={qtyText}
-            onChange={(e) => setQtyText(e.target.value.replace(/[^\d.,]/g, ""))}
+            onChange={(e) => {
+              // Punkt wird als Komma übernommen, mehr als zwei Nachkommastellen lassen sich nicht tippen
+              const next = e.target.value
+                .replace(/[^\d.,]/g, "")
+                .replace(/\./g, ",");
+              if (/^\d*(,\d{0,2})?$/.test(next)) setQtyText(next);
+            }}
             inputMode="decimal"
             aria-label="Menge"
             aria-invalid={qtyInvalid}
@@ -299,20 +345,65 @@ function ItemForm({
 
       {/* Kategorie */}
       <Label className="mt-4 mb-2 text-[13px] font-semibold">Kategorie</Label>
-      <ToggleGroup
-        type="single"
-        spacing={2}
-        value={category ?? ""}
-        onValueChange={(v) => setCategory(v || null)}
-        aria-label="Kategorie"
-        className="flex-wrap"
-      >
-        {CATEGORIES.map((c) => (
-          <ToggleGroupItem key={c} value={c} className={chipClass}>
-            {c}
-          </ToggleGroupItem>
-        ))}
-      </ToggleGroup>
+      <div className="flex flex-wrap items-center gap-2">
+        {/* "contents", damit der Neu-Chip in derselben Reihe umbricht */}
+        <ToggleGroup
+          type="single"
+          spacing={2}
+          value={category ?? ""}
+          onValueChange={(v) => setCategory(v || null)}
+          aria-label="Kategorie"
+          className="contents"
+        >
+          {categoryOptions.map((c) => (
+            <ToggleGroupItem key={c} value={c} className={chipClass}>
+              {c}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
+        {newCategory === null ? (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setNewCategory("")}
+            className={cn(chipClass, "border-dashed")}
+          >
+            <Plus className="size-3.5" />
+            Neu
+          </Button>
+        ) : (
+          <div className="flex items-center gap-1">
+            <Input
+              value={newCategory}
+              onChange={(e) => setNewCategory(e.target.value)}
+              onKeyDown={(e) => {
+                // Enter legt die Kategorie an, statt das Formular abzuschicken
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addCategory();
+                }
+              }}
+              onBlur={() => {
+                if (!newCategory.trim()) setNewCategory(null);
+              }}
+              placeholder="Neue Kategorie"
+              aria-label="Neue Kategorie"
+              maxLength={30}
+              autoFocus
+              className="h-8 w-40 rounded-full bg-card px-3.5 text-[13px] md:text-[13px]"
+            />
+            <Button
+              type="button"
+              size="icon-sm"
+              className="size-8 rounded-full"
+              onClick={addCategory}
+              aria-label="Kategorie anlegen"
+            >
+              <Check className="size-3.5" />
+            </Button>
+          </div>
+        )}
+      </div>
 
       {error && <p className="mt-4 text-[13px] text-destructive">{error}</p>}
 
@@ -345,7 +436,7 @@ function ItemForm({
         )}
         <Button
           type="submit"
-          disabled={saving}
+          disabled={saving || !name.trim()}
           className={cn(
             "rounded-full font-semibold",
             isDialog ? "h-10 px-5" : "h-12 flex-1 text-[15px]",
@@ -353,7 +444,11 @@ function ItemForm({
           )}
         >
           <Check className="size-4" strokeWidth={2.4} />
-          {saving ? "Speichert …" : "Speichern"}
+          {saving
+            ? "Speichert …"
+            : target.mode === "add"
+              ? "Hinzufügen"
+              : "Speichern"}
         </Button>
       </div>
     </form>

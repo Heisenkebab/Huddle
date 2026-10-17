@@ -39,15 +39,28 @@ export function formatAddedAt(iso: string): string {
   return `${weekday}, ${d.getDate()}. ${month}, ${time}`;
 }
 
+const isSmallUnit = (unit: string | null) => unit === "g" || unit === "ml";
+
+/**
+ * Menge nach einem Einheitenwechsel: auf g/ml → 100, von g/ml weg → 1,
+ * zwischen Stück/kg/l bleibt die Menge (1,5 Stück → 1,5 kg).
+ */
+export function quantityAfterUnitChange(
+  quantity: number | null,
+  from: string | null,
+  to: string | null,
+): number | null {
+  if (isSmallUnit(to)) return 100;
+  if (isSmallUnit(from)) return 1;
+  return quantity;
+}
+
 /** Schrittweite für die +/- Buttons je nach Einheit. */
 export function stepForUnit(unit: string | null): number {
   switch (unit) {
     case "g":
     case "ml":
       return 100;
-    case "kg":
-    case "l":
-      return 0.5;
     default:
       return 1;
   }

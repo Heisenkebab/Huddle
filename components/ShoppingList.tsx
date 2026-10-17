@@ -1,21 +1,5 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
-import { Copy, Info, Pencil, Plus, ShoppingCart, Trash2 } from "lucide-react";
-import { toast } from "sonner";
-import { getSupabase } from "@/lib/supabase";
-import { errorMessage, useTrip } from "@/lib/trip-context";
-import { formatQuantity } from "@/lib/format";
-import { copyText } from "@/lib/clipboard";
-import { showInfoToast, showUndoToast } from "@/lib/toasts";
-import { cn } from "@/lib/utils";
-import {
-  CATEGORY_ORDER,
-  type ShoppingItem,
-  type ShoppingItemInput,
-} from "@/lib/types";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -23,6 +7,22 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { copyText } from "@/lib/clipboard";
+import { demoItems } from "@/lib/demo-items";
+import { formatQuantity } from "@/lib/format";
+import { getSupabase } from "@/lib/supabase";
+import { showInfoToast, showUndoToast } from "@/lib/toasts";
+import { errorMessage, useTrip } from "@/lib/trip-context";
+import {
+  CATEGORY_ORDER,
+  type ShoppingItem,
+  type ShoppingItemInput,
+} from "@/lib/types";
+import { cn } from "@/lib/utils";
+import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
+import { Copy, Pencil, Plus, ShoppingCart, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import ItemEditor, { type EditorTarget } from "./ItemEditor";
 import PageHeader from "./PageHeader";
 import PersonAvatar from "./PersonAvatar";
@@ -57,6 +57,7 @@ export default function ShoppingList() {
   useEffect(() => {
     if (trip.loading) return;
     if (localMode) {
+      setItems((prev) => (prev.length ? prev : demoItems(tripId)));
       setLoading(false);
       return;
     }
@@ -257,6 +258,18 @@ export default function ShoppingList() {
     );
   }, [items]);
 
+  // Mit "Neu" angelegte Kategorien auch für weitere Artikel anbieten
+  const extraCategories = useMemo(
+    () => [
+      ...new Set(
+        items
+          .map((i) => i.category)
+          .filter((c): c is string => !!c && !CATEGORY_ORDER.includes(c)),
+      ),
+    ],
+    [items],
+  );
+
   const openCount = items.filter((i) => !i.purchased).length;
 
   /* ---------- WhatsApp-Brücke: offene Artikel als Klartext ---------- */
@@ -286,20 +299,6 @@ export default function ShoppingList() {
   return (
     <>
       <PageHeader title="Einkauf" />
-
-      {trip.error && (
-        <Alert className="mb-4 rounded-2xl border-coral/40 bg-coral/5 dark:bg-[#3a2a23]">
-          <Info className="text-coral" />
-          <AlertTitle>Vorschaumodus</AlertTitle>
-          <AlertDescription>
-            <p>{trip.error}</p>
-            <p>
-              Du kannst Artikel trotzdem hinzufügen – sie werden nur lokal
-              angezeigt und nicht gespeichert.
-            </p>
-          </AlertDescription>
-        </Alert>
-      )}
 
       {/* Laptop: alles in einer Karte (Entwurf LE1) */}
       <section className="lg:rounded-[28px] lg:border lg:bg-card/60 lg:p-6 lg:shadow-[0_1px_2px_rgb(30_28_24/0.04)] dark:lg:bg-[#232323]">
@@ -385,6 +384,7 @@ export default function ShoppingList() {
         open={editorOpen}
         onOpenChange={setEditorOpen}
         target={editor}
+        extraCategories={extraCategories}
         onSave={async (values) => {
           if (editor.mode === "edit") await updateItem(editor.item.id, values);
           else await addItem(values);
