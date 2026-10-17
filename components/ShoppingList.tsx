@@ -28,6 +28,9 @@ import PageHeader from "./PageHeader";
 import PersonAvatar from "./PersonAvatar";
 
 const LONG_PRESS_MS = 500;
+const SWIPE_ACTION_PX = 88; // Breite des roten „Löschen“-Bereichs
+const FULL_SWIPE_RATIO = 0.6; // ab diesem Anteil der Zeilenbreite wird direkt gelöscht
+const COLLAPSE_MS = 220;
 
 function randomId() {
   // crypto.randomUUID fehlt in unsicheren Kontexten (z. B. http://192.168.x.x am Handy)
@@ -42,6 +45,8 @@ export default function ShoppingList() {
   const [items, setItems] = useState<ShoppingItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [editorOpen, setEditorOpen] = useState(false);
+  // Höchstens eine Zeile ist aufgewischt
+  const [swipedId, setSwipedId] = useState<string | null>(null);
   const [editor, setEditor] = useState<EditorTarget & { key: number }>({
     mode: "add",
     key: 0,
@@ -352,6 +357,12 @@ export default function ShoppingList() {
                 <ItemRow
                   key={item.id}
                   item={item}
+                  swiped={swipedId === item.id}
+                  onSwipedChange={(open) =>
+                    setSwipedId((prev) =>
+                      open ? item.id : prev === item.id ? null : prev,
+                    )
+                  }
                   onToggle={(next) => togglePurchased(item, next)}
                   onEdit={() => openEditor({ mode: "edit", item })}
                   onDelete={() => deleteItem(item)}
@@ -408,148 +419,261 @@ function rank(category: string) {
   return i === -1 ? CATEGORY_ORDER.length - 1 : i;
 }
 
-/* ---------- Eine Zeile: Antippen = gekauft, Gedrückthalten = Details, Laptop-Hover = Aktionen ---------- */
+/* ---------- Eine Zeile: Antippen = gekauft, Gedrückthalten = Details, nach links wischen = Löschen, Laptop-Hover = Aktionen ---------- */
 function ItemRow({
   item,
+  swiped,
+  onSwipedChange,
   onToggle,
   onEdit,
   onDelete,
 }: {
   item: ShoppingItem;
+  swiped: boolean;
+  onSwipedChange: (open: boolean) => void;
   onToggle: (next: boolean) => void;
   onEdit: () => void;
   onDelete: () => void;
 }) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const start = useRef<{ x: number; y: number } | null>(null);
+  const removeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const start = useRef<{
+    x: number;
+    y: number;
+    base: number;
+    width: number;
+  } | null>(null);
+  const axis = useRef<"x" | "y" | null>(null);
   const longPressed = useRef(false);
+  const didSwipe = useRef(false);
+  const [drag, setDrag] = useState<number | null>(null); // Versatz in px während des Wischens
+  const [slideOut, setSlideOut] = useState(false);
+  const [removing, setRemoving] = useState(false);
   const checkboxId = `item-${item.id}`;
+
+  useEffect(
+    () => () => {
+      if (removeTimer.current) clearTimeout(removeTimer.current);
+    },
+    [],
+  );
 
   const clear = () => {
     if (timer.current) clearTimeout(timer.current);
     timer.current = null;
   };
 
-  return (
-    <li className="group/row">
-      {/* Die ganze Zeile ist das Label der Checkbox → Antippen schaltet "gekauft" um */}
-      <label
-        htmlFor={checkboxId}
-        className="flex items-center gap-3.5 px-4 py-3 transition-colors select-none [-webkit-touch-callout:none] active:bg-muted/60 lg:hover:bg-muted/60"
-        onPointerDown={(e) => {
-          if (e.pointerType === "mouse" && e.button !== 0) return;
-          longPressed.current = false;
-          start.current = { x: e.clientX, y: e.clientY };
-          timer.current = setTimeout(() => {
-            longPressed.current = true;
-            if (navigator.vibrate) navigator.vibrate(15);
-            onEdit();
-          }, LONG_PRESS_MS);
-        }}
-        onPointerMove={(e) => {
-          if (!start.current) return;
-          if (
-            Math.hypot(
-              e.clientX - start.current.x,
-              e.clientY - start.current.y,
-            ) > 10
-          )
-            clear();
-        }}
-        onPointerUp={clear}
-        onPointerLeave={clear}
-        onPointerCancel={clear}
-        onContextMenu={(e) => e.preventDefault()}
-        onClick={(e) => {
-          // Nach Gedrückthalten nicht zusätzlich abhaken
-          if (longPressed.current) e.preventDefault();
-        }}
-      >
-        <Checkbox
-          id={checkboxId}
-          checked={item.purchased}
-          onCheckedChange={(v) => onToggle(v === true)}
-          onKeyDown={(e) => {
-            // Tastatur: Shift+Enter öffnet Details
-            if (e.key === "Enter" && e.shiftKey) {
-              e.preventDefault();
-              onEdit();
-            }
-          }}
-          aria-label={item.name}
-          className="pointer-events-none size-[22px] rounded-[7px] border-[1.5px] border-[#c9c4ba] shadow-none dark:border-[#6b6b6b] [&_svg]:size-4"
-        />
-        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span
-            className={cn(
-              "text-[15px] font-medium",
-              item.purchased && "text-muted-foreground/60 line-through",
-            )}
-          >
-            {item.name}
-          </span>
-          {(item.quantity != null || item.unit) && (
-            <span
-              className={cn(
-                "text-xs text-muted-foreground",
-                item.purchased && "opacity-50",
-              )}
-            >
-              {formatQuantity(item.quantity, item.unit)}
-            </span>
-          )}
-        </span>
+  /* Zeile zusammenklappen, danach erst aus der Liste nehmen */
+  const remove = (fullSwipe = false) => {
+    if (removing) return;
+    setSlideOut(fullSwipe);
+    setRemoving(true);
+    onSwipedChange(false);
+    removeTimer.current = setTimeout(onDelete, COLLAPSE_MS);
+  };
 
-        {/* Laptop: Bearbeiten/Löschen beim Hovern (Entwurf LE1) */}
-        <span
-          className="hidden items-center gap-1.5 opacity-0 transition-opacity group-hover/row:opacity-100 group-has-[:focus-visible]/row:opacity-100 lg:flex"
-          onPointerDown={(e) => e.stopPropagation()}
+  const endSwipe = (commit: boolean) => {
+    const width = start.current?.width ?? 0;
+    start.current = null;
+    axis.current = null;
+    setDrag(null);
+    if (!commit || drag === null) return;
+    if (-drag > width * FULL_SWIPE_RATIO) remove(true);
+    else onSwipedChange(-drag > SWIPE_ACTION_PX / 2);
+  };
+
+  const offset = drag ?? (slideOut ? "-100%" : swiped ? -SWIPE_ACTION_PX : 0);
+  const showAction = drag !== null || swiped || slideOut;
+
+  return (
+    <li
+      className="group/row grid transition-[grid-template-rows,opacity] ease-out"
+      style={{
+        gridTemplateRows: removing ? "0fr" : "1fr",
+        opacity: removing ? 0 : 1,
+        transitionDuration: `${COLLAPSE_MS}ms`,
+      }}
+    >
+      <div className="relative min-h-0 overflow-hidden">
+        {/* Mobil: roter „Löschen“-Bereich unter der Zeile (Entwurf E2) */}
+        {showAction && (
+          <div className="absolute inset-0 flex justify-end bg-destructive text-white">
+            <button
+              type="button"
+              tabIndex={swiped ? 0 : -1}
+              onClick={() => remove()}
+              className="flex flex-col items-center justify-center gap-0.5 text-xs font-semibold"
+              style={{ width: SWIPE_ACTION_PX }}
+            >
+              <Trash2 className="size-5" />
+              Löschen
+            </button>
+          </div>
+        )}
+
+        <div
+          className={cn(
+            "relative bg-card",
+            drag === null && "transition-transform duration-200 ease-out",
+          )}
+          style={{
+            transform: `translateX(${typeof offset === "number" ? `${offset}px` : offset})`,
+          }}
         >
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon-sm"
-                aria-label="Bearbeiten"
-                className="size-8 rounded-full bg-card"
-                onClick={(e) => {
+          {/* Die ganze Zeile ist das Label der Checkbox → Antippen schaltet "gekauft" um */}
+          <label
+            htmlFor={checkboxId}
+            className="flex touch-pan-y items-center gap-3.5 px-4 py-3 transition-colors select-none [-webkit-touch-callout:none] active:bg-muted/60 lg:hover:bg-muted/60"
+            onPointerDown={(e) => {
+              if (e.pointerType === "mouse" && e.button !== 0) return;
+              longPressed.current = false;
+              didSwipe.current = false;
+              axis.current = null;
+              start.current = {
+                x: e.clientX,
+                y: e.clientY,
+                base: swiped ? -SWIPE_ACTION_PX : 0,
+                width: e.currentTarget.offsetWidth,
+              };
+              if (swiped) return; // aufgewischte Zeile: Antippen schiebt nur zurück
+              timer.current = setTimeout(() => {
+                longPressed.current = true;
+                if (navigator.vibrate) navigator.vibrate(15);
+                onEdit();
+              }, LONG_PRESS_MS);
+            }}
+            onPointerMove={(e) => {
+              const s = start.current;
+              if (!s) return;
+              const dx = e.clientX - s.x;
+              const dy = e.clientY - s.y;
+              if (!axis.current) {
+                if (Math.hypot(dx, dy) <= 10) return;
+                clear();
+                // Wischen nur per Finger/Stift; Maus hat am Laptop die Hover-Buttons
+                axis.current =
+                  e.pointerType !== "mouse" && Math.abs(dx) > Math.abs(dy)
+                    ? "x"
+                    : "y";
+                if (axis.current === "x") {
+                  didSwipe.current = true;
+                  e.currentTarget.setPointerCapture(e.pointerId);
+                }
+              }
+              if (axis.current === "x")
+                setDrag(Math.max(-s.width, Math.min(0, s.base + dx)));
+            }}
+            onPointerUp={() => {
+              clear();
+              endSwipe(true);
+            }}
+            onPointerLeave={clear}
+            onPointerCancel={() => {
+              clear();
+              endSwipe(false);
+            }}
+            onContextMenu={(e) => e.preventDefault()}
+            onClick={(e) => {
+              // Nach Gedrückthalten/Wischen nicht zusätzlich abhaken
+              if (longPressed.current || didSwipe.current) {
+                e.preventDefault();
+                didSwipe.current = false;
+                return;
+              }
+              // Antippen einer aufgewischten Zeile schiebt sie zurück
+              if (swiped) {
+                e.preventDefault();
+                onSwipedChange(false);
+              }
+            }}
+          >
+            <Checkbox
+              id={checkboxId}
+              checked={item.purchased}
+              onCheckedChange={(v) => onToggle(v === true)}
+              onKeyDown={(e) => {
+                // Tastatur: Shift+Enter öffnet Details
+                if (e.key === "Enter" && e.shiftKey) {
                   e.preventDefault();
                   onEdit();
-                }}
+                }
+              }}
+              aria-label={item.name}
+              className="pointer-events-none size-[22px] rounded-[7px] border-[1.5px] border-[#c9c4ba] shadow-none dark:border-[#6b6b6b] [&_svg]:size-4"
+            />
+            <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <span
+                className={cn(
+                  "text-[15px] font-medium",
+                  item.purchased && "text-muted-foreground/60 line-through",
+                )}
               >
-                <Pencil className="size-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent sideOffset={6}>Bearbeiten</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon-sm"
-                aria-label="Löschen"
-                className="size-8 rounded-full border-destructive/30 bg-destructive/5 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                onClick={(e) => {
-                  e.preventDefault();
-                  onDelete();
-                }}
-              >
-                <Trash2 className="size-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent sideOffset={6}>Löschen</TooltipContent>
-          </Tooltip>
-        </span>
+                {item.name}
+              </span>
+              {(item.quantity != null || item.unit) && (
+                <span
+                  className={cn(
+                    "text-xs text-muted-foreground",
+                    item.purchased && "opacity-50",
+                  )}
+                >
+                  {formatQuantity(item.quantity, item.unit)}
+                </span>
+              )}
+            </span>
 
-        <PersonAvatar
-          name={item.added_by_name}
-          color={item.added_by_color}
-          className={cn(item.purchased && "opacity-50")}
-          title={`Hinzugefügt von ${item.added_by_name}`}
-        />
-      </label>
+            {/* Laptop: Bearbeiten/Löschen beim Hovern (Entwurf LE1) */}
+            <span
+              className="hidden items-center gap-1.5 opacity-0 transition-opacity group-hover/row:opacity-100 group-has-[:focus-visible]/row:opacity-100 lg:flex"
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon-sm"
+                    aria-label="Bearbeiten"
+                    className="size-8 rounded-full bg-card"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onEdit();
+                    }}
+                  >
+                    <Pencil className="size-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent sideOffset={6}>Bearbeiten</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon-sm"
+                    aria-label="Löschen"
+                    className="size-8 rounded-full border-destructive/30 bg-destructive/5 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      remove();
+                    }}
+                  >
+                    <Trash2 className="size-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent sideOffset={6}>Löschen</TooltipContent>
+              </Tooltip>
+            </span>
+
+            <PersonAvatar
+              name={item.added_by_name}
+              color={item.added_by_color}
+              className={cn(item.purchased && "opacity-50")}
+              title={`Hinzugefügt von ${item.added_by_name}`}
+            />
+          </label>
+        </div>
+      </div>
     </li>
   );
 }
