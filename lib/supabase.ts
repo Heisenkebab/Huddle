@@ -1,9 +1,10 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { Database } from "@/types/database.types";
 
-let client: SupabaseClient | null = null;
+let client: SupabaseClient<Database> | null = null;
 
 /** Lazy, damit der Build ohne gesetzte Umgebungsvariablen nicht abbricht. */
-export function getSupabase(): SupabaseClient {
+export function getSupabase(): SupabaseClient<Database> {
   if (client) return client;
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -12,7 +13,7 @@ export function getSupabase(): SupabaseClient {
       "NEXT_PUBLIC_SUPABASE_URL und NEXT_PUBLIC_SUPABASE_ANON_KEY fehlen in .env.local",
     );
   }
-  client = createClient(url, key);
+  client = createClient<Database>(url, key);
   return client;
 }
 

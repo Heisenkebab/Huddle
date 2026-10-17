@@ -28,6 +28,15 @@ export interface ShoppingListItem {
   name: string;
 }
 
+// An open history entry together with its item, as returned by createItem
+export interface ShoppingListEntry {
+  id: string;
+  shopping_list_item_id: string;
+  unit: Unit;
+  amount: number;
+  shopping_list_item: ShoppingListItem;
+}
+
 export interface ShoppingListHistory {
   trip_id: string;
   valid_from: string;

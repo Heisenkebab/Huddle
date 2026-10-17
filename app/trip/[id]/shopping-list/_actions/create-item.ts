@@ -2,9 +2,14 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { ActionResult } from "@/types/action-result";
-import { ShoppingListItemBody } from "@/types/shopping-list";
+import {
+  Category,
+  ShoppingListEntry,
+  ShoppingListItemBody,
+  Unit,
+} from "@/types/shopping-list";
 
-export type CreateItemResult = ActionResult<{ id: string }>;
+export type CreateItemResult = ActionResult<ShoppingListEntry>;
 
 export async function createItem(
   trip_id: string,
@@ -14,19 +19,34 @@ export async function createItem(
     const supabase = await createClient();
 
     // Trip lookup, item insert and history insert run in one transaction
-    const { data, error } = await supabase.rpc("create_shopping_list_item", {
-      p_trip_id: trip_id,
-      p_name: item.name,
-      p_category: item.category,
-      p_unit: item.unit,
-      p_amount: item.amount,
-    });
+    const { data, error } = await supabase
+      .rpc("create_shopping_list_item", {
+        p_trip_id: trip_id,
+        p_name: item.name,
+        p_category: item.category,
+        p_unit: item.unit,
+        p_amount: item.amount,
+      })
+      .single();
 
     if (error) {
       throw new Error(error.message);
     }
 
-    return { success: true, data: { id: data as string } };
+    return {
+      success: true,
+      data: {
+        id: data.id,
+        shopping_list_item_id: data.shopping_list_item_id,
+        unit: data.unit as Unit,
+        amount: Number(data.amount),
+        shopping_list_item: {
+          id: data.shopping_list_item_id,
+          category: data.category as Category,
+          name: data.name,
+        },
+      },
+    };
   } catch (error) {
     console.error("createItem failed:", error);
     return { success: false, error: "Failed to create item" };

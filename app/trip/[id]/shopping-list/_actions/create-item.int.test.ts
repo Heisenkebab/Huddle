@@ -44,20 +44,32 @@ describe("createItem", () => {
     await cleanUp([tripId], [owner]);
   });
 
-  test("creates the item in the trip and returns its id", async () => {
+  test("creates the item in the trip and returns the new entry", async () => {
     const result = await createItem(tripId, item);
 
     expect(result.success).toBe(true);
     if (!result.success) return;
 
+    expect(result.data).toEqual({
+      id: expect.any(String),
+      shopping_list_item_id: expect.any(String),
+      unit: Unit.LITER,
+      amount: 2,
+      shopping_list_item: {
+        id: result.data.shopping_list_item_id,
+        category: Category.CHILLED,
+        name: "Milk",
+      },
+    });
+
     const { data: created } = await admin
       .from("shopping_list_item")
       .select("id, trip_id, name, category")
-      .eq("id", result.data.id)
+      .eq("id", result.data.shopping_list_item_id)
       .single();
 
     expect(created).toEqual({
-      id: result.data.id,
+      id: result.data.shopping_list_item_id,
       trip_id: tripId,
       name: "Milk",
       category: Category.CHILLED,
@@ -68,9 +80,9 @@ describe("createItem", () => {
     const result = await createItem(tripId, item);
     if (!result.success) throw new Error(result.error);
 
-    expect(await getHistory(result.data.id)).toEqual([
+    expect(await getHistory(result.data.shopping_list_item_id)).toEqual([
       {
-        shopping_list_item_id: result.data.id,
+        shopping_list_item_id: result.data.shopping_list_item_id,
         unit: Unit.LITER,
         amount: 2,
         bought_at: null,
@@ -86,7 +98,7 @@ describe("createItem", () => {
     await admin
       .from("shopping_list_history")
       .update({ bought_at: new Date().toISOString() })
-      .eq("shopping_list_item_id", first.data.id);
+      .eq("shopping_list_item_id", first.data.shopping_list_item_id);
 
     const second = await createItem(tripId, {
       ...item,
@@ -95,9 +107,11 @@ describe("createItem", () => {
     });
     if (!second.success) throw new Error(second.error);
 
-    expect(second.data.id).toBe(first.data.id);
+    expect(second.data.shopping_list_item_id).toBe(
+      first.data.shopping_list_item_id,
+    );
 
-    const history = await getHistory(first.data.id);
+    const history = await getHistory(first.data.shopping_list_item_id);
     expect(history).toHaveLength(2);
     expect(history[1]).toMatchObject({ amount: 1, bought_at: null });
   });
@@ -111,7 +125,7 @@ describe("createItem", () => {
     const second = await createItem(tripId, item);
 
     expect(second).toEqual({ success: false, error: "Failed to create item" });
-    expect(await getHistory(first.data.id)).toHaveLength(1);
+    expect(await getHistory(first.data.shopping_list_item_id)).toHaveLength(1);
   });
 
   test("fails and writes nothing when the trip does not exist", async () => {

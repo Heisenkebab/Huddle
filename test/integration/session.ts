@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { inject } from "vitest";
+import { Database } from "@/types/database.types";
 
 let accessToken: string | null = null;
 
@@ -43,10 +44,14 @@ export function signOut() {
 // What lib/supabase/server.ts returns in tests: the publishable key plus the
 // signed-in user's token, or an anonymous client after signOut()
 export function createSessionClient() {
-  return createClient(inject("supabaseUrl"), inject("supabasePublishableKey"), {
-    auth: { persistSession: false },
-    global: accessToken
-      ? { headers: { Authorization: `Bearer ${accessToken}` } }
-      : undefined,
-  });
+  return createClient<Database>(
+    inject("supabaseUrl"),
+    inject("supabasePublishableKey"),
+    {
+      auth: { persistSession: false },
+      global: accessToken
+        ? { headers: { Authorization: `Bearer ${accessToken}` } }
+        : undefined,
+    },
+  );
 }
