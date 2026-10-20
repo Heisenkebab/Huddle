@@ -29,6 +29,9 @@ export async function updateItem(
       })
       .single();
     if (error) {
+      if (error.hint === "invalid_amount") {
+        return { success: false, error: "Invalid amount for this unit" };
+      }
       throw new Error(error.message);
     }
     return {

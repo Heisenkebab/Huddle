@@ -177,6 +177,54 @@ describe("createItem", () => {
     ]);
   });
 
+  test.each([
+    { unit: Unit.GRAM, amount: 200.2 },
+    { unit: Unit.MILLILITER, amount: 0.5 },
+    { unit: Unit.AMOUNT, amount: 2.5 },
+    { unit: Unit.KILOGRAM, amount: 1.2345 },
+    { unit: Unit.LITER, amount: 0 },
+    { unit: Unit.LITER, amount: -1 },
+  ])("fails and writes nothing for $amount $unit", async ({ unit, amount }) => {
+    const result = await createItem(tripId, { ...item, unit, amount });
+
+    expect(result).toEqual({
+      success: false,
+      error: "Invalid amount for this unit",
+    });
+    const { count } = await admin
+      .from("shopping_list_item")
+      .select("*", { count: "exact", head: true })
+      .eq("trip_id", tripId);
+    expect(count).toBe(0);
+  });
+
+  test("accepts kilograms with three decimals", async () => {
+    const result = await createItem(tripId, {
+      ...item,
+      unit: Unit.KILOGRAM,
+      amount: 1.234,
+    });
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data).toMatchObject({ unit: Unit.KILOGRAM, amount: 1.234 });
+  });
+
+  test("fails and keeps the open entry when a negative amount is merged", async () => {
+    const first = await createItem(tripId, item);
+    if (!first.success) throw new Error(first.error);
+
+    const second = await createItem(tripId, { ...item, amount: -1 });
+
+    expect(second).toEqual({
+      success: false,
+      error: "Invalid amount for this unit",
+    });
+    expect(await getHistory(first.data.shopping_list_item_id)).toEqual([
+      expect.objectContaining({ unit: Unit.LITER, amount: 2 }),
+    ]);
+  });
+
   test("fails and writes nothing when the trip does not exist", async () => {
     silenceErrorLog();
 

@@ -34,7 +34,8 @@ $$;
 -- amount is added to it (converted into the entry's unit) and merged is true;
 -- otherwise a new history entry is opened. Fails with hint 'unit_mismatch' if
 -- the open entry's unit can't be combined with the new one (e.g. LITER and
--- AMOUNT).
+-- AMOUNT), and with hint 'invalid_amount' if the amount doesn't fit its unit
+-- (see is_valid_amount).
 -- Everything runs in one transaction: if any statement fails, nothing is kept.
 CREATE OR REPLACE FUNCTION create_shopping_list_item(
   p_trip_id uuid,
@@ -66,6 +67,13 @@ DECLARE
   v_open_unit "Unit";
   v_merged boolean := false;
 BEGIN
+  -- Checked here and not only by the table constraint: when merging, p_amount
+  -- itself is never written, so e.g. a negative amount would slip through
+  IF NOT is_valid_amount(p_unit, p_amount) THEN
+    RAISE EXCEPTION 'Invalid amount % for unit %', p_amount, p_unit
+      USING HINT = 'invalid_amount';
+  END IF;
+
   -- Fails with a foreign key error if the trip does not exist
   INSERT INTO shopping_list_item (trip_id, name, category)
   VALUES (p_trip_id, trim(p_name), p_category)

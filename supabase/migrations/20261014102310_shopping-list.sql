@@ -64,6 +64,20 @@ CREATE TABLE "shopping_list_item" (
 CREATE UNIQUE INDEX "shopping_list_item_trip_name_idx"
   ON "shopping_list_item" ("trip_id", lower(trim("name")));
 
+-- Amounts must be positive. Grams, milliliters and pieces are whole numbers;
+-- kilograms and liters have at most 3 decimals, so converting them into grams
+-- or milliliters always gives a whole number.
+CREATE OR REPLACE FUNCTION is_valid_amount(p_unit "Unit", p_amount numeric)
+RETURNS boolean
+LANGUAGE sql
+IMMUTABLE
+AS $$
+  SELECT p_amount > 0
+    AND p_amount = round(p_amount, 3)
+    AND (p_unit NOT IN ('GRAM', 'MILLILITER', 'AMOUNT')
+         OR p_amount = trunc(p_amount));
+$$;
+
 CREATE TABLE "shopping_list_history" (
   "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   "created_at" timestamptz NOT NULL DEFAULT now(),
@@ -77,7 +91,9 @@ CREATE TABLE "shopping_list_history" (
   -- removed it). Set by a trigger; NULL for rows written without a signed-in
   -- user (seed, service role) or when that profile was deleted.
   "updated_by" uuid REFERENCES "profile" ("id") ON DELETE SET NULL,
-  "created_by" uuid REFERENCES "profile" ("id") ON DELETE SET NULL
+  "created_by" uuid REFERENCES "profile" ("id") ON DELETE SET NULL,
+  CONSTRAINT "shopping_list_history_amount_check"
+    CHECK (is_valid_amount("unit", "amount"))
 );
 
 -- At most one open (not bought, not removed) entry per item

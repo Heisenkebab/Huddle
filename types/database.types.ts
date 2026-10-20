@@ -287,6 +287,10 @@ export type Database = {
       is_anonymous_user: { Args: Record<PropertyKey, never>; Returns: boolean };
       is_trip_member: { Args: { p_trip_id: string }; Returns: boolean };
       is_trip_owner: { Args: { p_trip_id: string }; Returns: boolean };
+      is_valid_amount: {
+        Args: { p_amount: number; p_unit: Database["public"]["Enums"]["Unit"] };
+        Returns: boolean;
+      };
       set_shopping_list_item_bought: {
         Args: { p_bought: boolean; p_item_id: string; p_trip_id: string };
         Returns: undefined;

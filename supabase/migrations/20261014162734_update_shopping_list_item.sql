@@ -1,6 +1,8 @@
 -- Updates an item of a trip and returns its open history entry together with
 -- the item's name and category. Only the fields that are not NULL are changed.
 -- A new unit or amount is written to the item's open history entry in place.
+-- Fails with hint 'invalid_amount' if the resulting amount doesn't fit its
+-- unit (see is_valid_amount).
 CREATE OR REPLACE FUNCTION update_shopping_list_item(
   p_trip_id uuid,
   p_item_id uuid,
@@ -23,6 +25,10 @@ AS $$
 -- The output columns share names with table columns; in queries, mean the
 -- table columns
 #variable_conflict use_column
+DECLARE
+  v_history_id uuid;
+  v_unit "Unit";
+  v_amount numeric;
 BEGIN
   -- The trip check stops callers from editing an item of another trip
   UPDATE shopping_list_item
@@ -37,19 +43,32 @@ BEGIN
   END IF;
 
   IF p_unit IS NOT NULL OR p_amount IS NOT NULL THEN
-    -- shopping_list_history_one_open_idx guarantees at most one open entry,
-    -- so this changes exactly one row
-    UPDATE shopping_list_history
-    SET unit = COALESCE(p_unit, unit),
-        amount = COALESCE(p_amount, amount),
-        updated_at = now()
+    -- shopping_list_history_one_open_idx guarantees at most one open entry
+    SELECT id, unit, amount INTO v_history_id, v_unit, v_amount
+    FROM shopping_list_history
     WHERE shopping_list_item_id = p_item_id
       AND bought_at IS NULL
-      AND removed_at IS NULL;
+      AND removed_at IS NULL
+    FOR UPDATE;
 
-    IF NOT FOUND THEN
+    IF v_history_id IS NULL THEN
       RAISE EXCEPTION 'Item % has no open entry to update', p_item_id;
     END IF;
+
+    -- Checks the combination, so changing only the unit (e.g. 2.5 LITER to
+    -- GRAM) is caught as well
+    v_unit := COALESCE(p_unit, v_unit);
+    v_amount := COALESCE(p_amount, v_amount);
+    IF NOT is_valid_amount(v_unit, v_amount) THEN
+      RAISE EXCEPTION 'Invalid amount % for unit %', v_amount, v_unit
+        USING HINT = 'invalid_amount';
+    END IF;
+
+    UPDATE shopping_list_history
+    SET unit = v_unit,
+        amount = v_amount,
+        updated_at = now()
+    WHERE id = v_history_id;
   END IF;
 
   RETURN QUERY

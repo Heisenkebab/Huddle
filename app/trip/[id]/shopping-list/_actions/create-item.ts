@@ -36,6 +36,9 @@ export async function createItem(
           error: "Item is already on the list in a different unit",
         };
       }
+      if (error.hint === "invalid_amount") {
+        return { success: false, error: "Invalid amount for this unit" };
+      }
       throw new Error(error.message);
     }
 

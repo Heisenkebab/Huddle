@@ -262,4 +262,35 @@ describe("updateItem", () => {
 
     expect(result).toEqual({ success: false, error: "Failed to update item" });
   });
+
+  test("fails and changes nothing when the amount doesn't fit the unit", async () => {
+    const result = await updateItem(itemId, tripId, {
+      name: "Cheese",
+      unit: Unit.GRAM,
+      amount: 200.2,
+    });
+
+    expect(result).toEqual({
+      success: false,
+      error: "Invalid amount for this unit",
+    });
+    expect(await getItem(itemId)).toMatchObject({ name: "Milk" });
+    expect(await getHistory(itemId)).toEqual([
+      expect.objectContaining({ unit: Unit.LITER, amount: 2 }),
+    ]);
+  });
+
+  test("fails when only the unit changes and the amount no longer fits", async () => {
+    await updateItem(itemId, tripId, { amount: 2.5 });
+
+    const result = await updateItem(itemId, tripId, { unit: Unit.GRAM });
+
+    expect(result).toEqual({
+      success: false,
+      error: "Invalid amount for this unit",
+    });
+    expect(await getHistory(itemId)).toEqual([
+      expect.objectContaining({ unit: Unit.LITER, amount: 2.5 }),
+    ]);
+  });
 });
