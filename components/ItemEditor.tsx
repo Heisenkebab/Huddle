@@ -1,26 +1,5 @@
 "use client";
 
-import { useState, type ComponentType, type ReactNode } from "react";
-import { Check, Info, Minus, Plus, Tag, Trash2, X } from "lucide-react";
-import { useLocale, useTranslations } from "next-intl";
-import {
-  decimalSeparator,
-  formatAddedAt,
-  formatNumber,
-  parseNumber,
-  quantityAfterUnitChange,
-  stepForUnit,
-} from "@/lib/format";
-import {
-  CATEGORIES,
-  UNITS,
-  type CategoryKey,
-  type ShoppingItem,
-  type ShoppingItemInput,
-  type UnitKey,
-} from "@/lib/types";
-import { DESKTOP_QUERY, useMediaQuery } from "@/lib/use-media-query";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -39,6 +18,30 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import {
+  decimalSeparator,
+  formatAddedAt,
+  formatNumber,
+  isQuantityInput,
+  isValidQuantity,
+  maxDecimalsForUnit,
+  parseNumber,
+  quantityAfterUnitChange,
+  stepForUnit,
+} from "@/lib/format";
+import {
+  CATEGORIES,
+  UNITS,
+  type CategoryKey,
+  type ShoppingItem,
+  type ShoppingItemInput,
+  type UnitKey,
+} from "@/lib/types";
+import { DESKTOP_QUERY, useMediaQuery } from "@/lib/use-media-query";
+import { cn } from "@/lib/utils";
+import { Check, Info, Minus, Plus, Tag, Trash2, X } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
+import { useState, type ComponentType, type ReactNode } from "react";
 import PersonAvatar from "./PersonAvatar";
 
 export type EditorTarget =
@@ -126,8 +129,7 @@ function ItemForm({
   const [error, setError] = useState<string | null>(null);
 
   const qty = parseNumber(qtyText);
-  // Pflichtfeld: größer 0, höchstens zwei Nachkommastellen
-  const qtyInvalid = qty === null || qty <= 0 || /[.,]\d{3,}$/.test(qtyText);
+  const qtyInvalid = !isValidQuantity(qty, unit);
 
   const stepQty = (dir: 1 | -1) => {
     const step = stepForUnit(unit);
@@ -143,7 +145,11 @@ function ItemForm({
     const trimmed = name.trim();
     if (!trimmed) return setError(t("itemEditor.nameRequired"));
     if (qtyInvalid || qty === null)
-      return setError(t("itemEditor.quantityInvalid"));
+      return setError(
+        t("itemEditor.quantityInvalid", {
+          decimals: maxDecimalsForUnit(unit),
+        }),
+      );
     setSaving(true);
     setError(null);
     try {
@@ -289,7 +295,7 @@ function ItemForm({
               const next = e.target.value
                 .replace(/[^\d.,]/g, "")
                 .replace(/[.,]/g, decimalSeparator(locale));
-              if (/^\d*([.,]\d{0,2})?$/.test(next)) setQtyText(next);
+              if (isQuantityInput(next, unit)) setQtyText(next);
             }}
             inputMode="decimal"
             aria-label={t("itemEditor.quantity")}
@@ -313,7 +319,7 @@ function ItemForm({
         {t("itemEditor.decimalsHint")}
       </p>
 
-      {/* Kategorie */}
+      {/* Category */}
       <Label className="mt-4 mb-2 text-[13px] font-semibold">
         {t("itemEditor.category")}
       </Label>
@@ -321,7 +327,7 @@ function ItemForm({
         type="single"
         spacing={2}
         value={category}
-        // Abwählen nicht erlaubt: es ist immer eine Kategorie gesetzt
+        // A category must always be selected
         onValueChange={(v) => v && setCategory(v as CategoryKey)}
         aria-label={t("itemEditor.category")}
         className="flex-wrap"
@@ -335,7 +341,7 @@ function ItemForm({
 
       {error && <p className="mt-4 text-[13px] text-destructive">{error}</p>}
 
-      {/* Aktionen */}
+      {/* Actions */}
       <div className={cn("mt-6 flex gap-2", isDialog && "items-center")}>
         {onDelete && (
           <Button

@@ -4,7 +4,11 @@ import {
   formatNumber,
   formatQuantity,
   formatTripDates,
+  isQuantityInput,
+  isValidQuantity,
+  maxDecimalsForUnit,
   parseNumber,
+  quantityAfterUnitChange,
 } from "@/lib/format";
 
 describe("formatNumber", () => {
@@ -49,5 +53,70 @@ describe("formatTripDates", () => {
 
   test("no start date", () => {
     expect(formatTripDates(null, null, "en")).toBe("");
+  });
+});
+
+test("maxDecimalsForUnit", () => {
+  expect(maxDecimalsForUnit("kg")).toBe(3);
+  expect(maxDecimalsForUnit("l")).toBe(3);
+  expect(maxDecimalsForUnit("g")).toBe(0);
+  expect(maxDecimalsForUnit("ml")).toBe(0);
+  expect(maxDecimalsForUnit("pcs")).toBe(0);
+});
+
+describe("isValidQuantity", () => {
+  test.each([
+    [200, "g"],
+    [250, "ml"],
+    [3, "pcs"],
+    [1.234, "kg"],
+    [0.5, "l"],
+  ])("accepts %s %s", (quantity, unit) => {
+    expect(isValidQuantity(quantity, unit)).toBe(true);
+  });
+
+  test.each([
+    [200.2, "g"],
+    [0.5, "ml"],
+    [2.5, "pcs"],
+    [1.2345, "kg"],
+    [0, "l"],
+    [-1, "kg"],
+    [null, "kg"],
+  ])("rejects %s %s", (quantity, unit) => {
+    expect(isValidQuantity(quantity, unit)).toBe(false);
+  });
+});
+
+describe("isQuantityInput", () => {
+  test("allows up to three decimals for kg and l, while typing too", () => {
+    expect(isQuantityInput("", "kg")).toBe(true);
+    expect(isQuantityInput("1,", "kg")).toBe(true);
+    expect(isQuantityInput("1,234", "kg")).toBe(true);
+    expect(isQuantityInput("1.234", "l")).toBe(true);
+    expect(isQuantityInput("1,2345", "kg")).toBe(false);
+  });
+
+  test("allows only whole numbers for g, ml and pieces", () => {
+    expect(isQuantityInput("200", "g")).toBe(true);
+    expect(isQuantityInput("200,", "g")).toBe(false);
+    expect(isQuantityInput("0.5", "ml")).toBe(false);
+    expect(isQuantityInput("2,5", "pcs")).toBe(false);
+  });
+});
+
+describe("quantityAfterUnitChange", () => {
+  test("switches to 100 for g/ml and back to 1", () => {
+    expect(quantityAfterUnitChange(2, "kg", "g")).toBe(100);
+    expect(quantityAfterUnitChange(250, "ml", "l")).toBe(1);
+  });
+
+  test("keeps the quantity between kg and l", () => {
+    expect(quantityAfterUnitChange(1.234, "kg", "l")).toBe(1.234);
+  });
+
+  test("rounds to a whole number of pieces, at least 1", () => {
+    expect(quantityAfterUnitChange(1.5, "kg", "pcs")).toBe(2);
+    expect(quantityAfterUnitChange(0.25, "l", "pcs")).toBe(1);
   });
 });

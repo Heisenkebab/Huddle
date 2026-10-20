@@ -81,7 +81,7 @@
     "less": "Less",
     "more": "More",
     "unit": "Unit",
-    "decimalsHint": "Decimals allowed, e.g. 0.5 kg or 1.5 l",
+    "decimalsHint": "Decimals only for kg and l (up to 3 places), e.g. 0.5 kg or 1.5 l",
     "category": "Category",
     "delete": "Delete",
     "cancel": "Cancel",
@@ -89,7 +89,7 @@
     "add": "Add",
     "save": "Save",
     "nameRequired": "Please enter an item.",
-    "quantityInvalid": "Please enter a quantity greater than 0 with at most two decimal places.",
+    "quantityInvalid": "Please enter a quantity greater than 0 {decimals, plural, =0 {without decimals} one {with at most # decimal place} other {with at most # decimal places}}.",
     "saveFailed": "Saving failed: {message}",
     "tryAgain": "Please try again."
   },

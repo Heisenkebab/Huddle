@@ -48,8 +48,35 @@ export function formatAddedAt(iso: string, locale: string): string {
 const isSmallUnit = (unit: string | null) => unit === "g" || unit === "ml";
 
 /**
+ * Erlaubte Nachkommastellen je Einheit, wie is_valid_amount in der DB:
+ * kg/l höchstens drei (1,234 kg = 1234 g), g/ml/Stück nur ganze Zahlen.
+ */
+export function maxDecimalsForUnit(unit: string | null): number {
+  return unit === "kg" || unit === "l" ? 3 : 0;
+}
+
+/** Größer 0 und nicht mehr Nachkommastellen, als die Einheit erlaubt. */
+export function isValidQuantity(
+  quantity: number | null,
+  unit: string | null,
+): boolean {
+  if (quantity === null || quantity <= 0) return false;
+  return Number(quantity.toFixed(maxDecimalsForUnit(unit))) === quantity;
+}
+
+/**
+ * Darf das Mengenfeld diesen (evtl. halb getippten) Text enthalten?
+ * Bei g/ml/Stück kein Komma, bei kg/l höchstens drei Nachkommastellen.
+ */
+export function isQuantityInput(text: string, unit: string | null): boolean {
+  const decimals = maxDecimalsForUnit(unit);
+  if (decimals === 0) return /^\d*$/.test(text);
+  return new RegExp(`^\\d*([.,]\\d{0,${decimals}})?$`).test(text);
+}
+
+/**
  * Menge nach einem Einheitenwechsel: auf g/ml → 100, von g/ml weg → 1,
- * zwischen Stück/kg/l bleibt die Menge (1,5 Stück → 1,5 kg).
+ * zwischen kg/l bleibt die Menge, auf Stück wird gerundet (1,5 kg → 2 Stück).
  */
 export function quantityAfterUnitChange(
   quantity: number | null,
@@ -58,6 +85,8 @@ export function quantityAfterUnitChange(
 ): number | null {
   if (isSmallUnit(to)) return 100;
   if (isSmallUnit(from)) return 1;
+  if (quantity !== null && maxDecimalsForUnit(to) === 0)
+    return Math.max(1, Math.round(quantity));
   return quantity;
 }
 
