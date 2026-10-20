@@ -4,12 +4,12 @@ import { createClient } from "@/lib/supabase/server";
 import { ActionResult } from "@/types/action-result";
 import {
   Category,
-  ShoppingListEntry,
+  CreatedShoppingListEntry,
   ShoppingListItemBody,
   Unit,
 } from "@/types/shopping-list";
 
-export type CreateItemResult = ActionResult<ShoppingListEntry>;
+export type CreateItemResult = ActionResult<CreatedShoppingListEntry>;
 
 export async function createItem(
   trip_id: string,
@@ -18,7 +18,7 @@ export async function createItem(
   try {
     const supabase = await createClient();
 
-    // Trip lookup, item insert and history insert run in one transaction
+    // Trip lookup, item insert and history insert/merge run in one transaction
     const { data, error } = await supabase
       .rpc("create_shopping_list_item", {
         p_trip_id: trip_id,
@@ -30,6 +30,12 @@ export async function createItem(
       .single();
 
     if (error) {
+      if (error.hint === "unit_mismatch") {
+        return {
+          success: false,
+          error: "Item is already on the list in a different unit",
+        };
+      }
       throw new Error(error.message);
     }
 
@@ -45,6 +51,7 @@ export async function createItem(
           category: data.category as Category,
           name: data.name,
         },
+        merged: data.merged,
       },
     };
   } catch (error) {

@@ -60,6 +60,7 @@ describe("createItem", () => {
         category: Category.CHILLED,
         name: "Milk",
       },
+      merged: false,
     });
 
     const { data: created } = await admin
@@ -116,16 +117,64 @@ describe("createItem", () => {
     expect(history[1]).toMatchObject({ amount: 1, bought_at: null });
   });
 
-  test("fails when the item already has an open entry", async () => {
-    silenceErrorLog();
-
+  test("merges the amount into the open entry when the item is added again", async () => {
     const first = await createItem(tripId, item);
     if (!first.success) throw new Error(first.error);
 
-    const second = await createItem(tripId, item);
+    const second = await createItem(tripId, {
+      ...item,
+      name: "  milk ",
+      amount: 1,
+    });
+    if (!second.success) throw new Error(second.error);
 
-    expect(second).toEqual({ success: false, error: "Failed to create item" });
-    expect(await getHistory(first.data.shopping_list_item_id)).toHaveLength(1);
+    expect(second.data).toMatchObject({
+      id: first.data.id,
+      shopping_list_item_id: first.data.shopping_list_item_id,
+      unit: Unit.LITER,
+      amount: 3,
+      merged: true,
+    });
+    expect(await getHistory(first.data.shopping_list_item_id)).toEqual([
+      expect.objectContaining({ unit: Unit.LITER, amount: 3, bought_at: null }),
+    ]);
+  });
+
+  test("converts the added amount into the open entry's unit", async () => {
+    const first = await createItem(tripId, item);
+    if (!first.success) throw new Error(first.error);
+
+    const second = await createItem(tripId, {
+      ...item,
+      unit: Unit.MILLILITER,
+      amount: 500,
+    });
+    if (!second.success) throw new Error(second.error);
+
+    expect(second.data).toMatchObject({
+      unit: Unit.LITER,
+      amount: 2.5,
+      merged: true,
+    });
+  });
+
+  test("fails and keeps the open entry when the units can't be combined", async () => {
+    const first = await createItem(tripId, item);
+    if (!first.success) throw new Error(first.error);
+
+    const second = await createItem(tripId, {
+      ...item,
+      unit: Unit.AMOUNT,
+      amount: 3,
+    });
+
+    expect(second).toEqual({
+      success: false,
+      error: "Item is already on the list in a different unit",
+    });
+    expect(await getHistory(first.data.shopping_list_item_id)).toEqual([
+      expect.objectContaining({ unit: Unit.LITER, amount: 2 }),
+    ]);
   });
 
   test("fails and writes nothing when the trip does not exist", async () => {

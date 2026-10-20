@@ -32,6 +32,12 @@ export interface ShoppingListEntry {
   shopping_list_item: ShoppingListItem;
 }
 
+// What createItem returns: the open entry, and whether the new amount was
+// merged into an entry that was already on the list
+export interface CreatedShoppingListEntry extends ShoppingListEntry {
+  merged: boolean;
+}
+
 export interface ShoppingListHistory {
   id: string;
   trip_id: string;

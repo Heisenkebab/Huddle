@@ -277,6 +277,7 @@ export type Database = {
           amount: number;
           category: Database["public"]["Enums"]["Category"];
           id: string;
+          merged: boolean;
           name: string;
           shopping_list_item_id: string;
           unit: Database["public"]["Enums"]["Unit"];
@@ -291,6 +292,14 @@ export type Database = {
         Returns: undefined;
       };
       shares_trip_with: { Args: { p_profile_id: string }; Returns: boolean };
+      unit_factor: {
+        Args: { p_unit: Database["public"]["Enums"]["Unit"] };
+        Returns: number;
+      };
+      unit_group: {
+        Args: { p_unit: Database["public"]["Enums"]["Unit"] };
+        Returns: string;
+      };
       update_shopping_list_item: {
         Args: {
           p_amount?: number;
