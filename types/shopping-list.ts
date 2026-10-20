@@ -1,19 +1,14 @@
-export enum Unit {
-  GRAM = "GRAM",
-  KILOGRAM = "KILOGRAM",
-  MILLILITER = "MILLILITER",
-  LITER = "LITER",
-  AMOUNT = "AMOUNT",
-}
+import { Constants, Database } from "./database.types";
 
-export enum Category {
-  PRODUCE = "PRODUCE",
-  CHILLED = "CHILLED",
-  BAKERY = "BAKERY",
-  DRINKS = "DRINKS",
-  BBQ = "BBQ",
-  OTHER = "OTHER",
-}
+export type Unit = Database["public"]["Enums"]["Unit"];
+export const Unit = Object.fromEntries(
+  Constants.public.Enums.Unit.map((u) => [u, u]),
+) as { [K in Unit]: K };
+
+export type Category = Database["public"]["Enums"]["Category"];
+export const Category = Object.fromEntries(
+  Constants.public.Enums.Category.map((c) => [c, c]),
+) as { [K in Category]: K };
 
 export interface ShoppingListItemBody {
   name: string;
@@ -38,8 +33,9 @@ export interface ShoppingListEntry {
 }
 
 export interface ShoppingListHistory {
+  id: string;
   trip_id: string;
-  valid_from: string;
+  created_at: string;
   shopping_list_item_id: string;
   bought_at: string | null;
   removed_at: string | null;
