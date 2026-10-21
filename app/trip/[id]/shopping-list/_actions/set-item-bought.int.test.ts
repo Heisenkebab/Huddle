@@ -10,7 +10,7 @@ import { signInAs, signOut } from "@/test/integration/session";
 import { Category, Unit } from "@/types/shopping-list";
 import { randomUUID } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { setShoppingListItemBought } from "./set-shopping-list-item-bought";
+import { setShoppingListItemBought } from "./set-item-bought";
 
 const admin = createAdminClient();
 
