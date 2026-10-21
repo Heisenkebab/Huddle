@@ -310,8 +310,8 @@ describe("getAllActiveShoppingListItems", () => {
     if (!created.success) throw new Error(created.error);
     await signInAs(guest.email, TEST_PASSWORD);
     const updated = await updateItem(
-      created.data.shopping_list_item_id,
       guestTripId,
+      created.data.shopping_list_item_id,
       { amount: 3 },
     );
     if (!updated.success) throw new Error(updated.error);

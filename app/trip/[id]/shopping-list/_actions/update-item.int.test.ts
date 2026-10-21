@@ -106,7 +106,7 @@ describe("updateItem", () => {
   });
 
   test("updates every field, trims the name and returns the open entry", async () => {
-    const result = await updateItem(itemId, tripId, {
+    const result = await updateItem(tripId, itemId, {
       name: " cheese ",
       category: Category.OTHER,
       unit: Unit.AMOUNT,
@@ -146,7 +146,7 @@ describe("updateItem", () => {
   });
 
   test("updates only the name and category and still returns the entry", async () => {
-    const result = await updateItem(itemId, tripId, {
+    const result = await updateItem(tripId, itemId, {
       name: "Cheese",
       category: Category.OTHER,
     });
@@ -178,7 +178,7 @@ describe("updateItem", () => {
   });
 
   test("updates only the unit and amount", async () => {
-    const result = await updateItem(itemId, tripId, {
+    const result = await updateItem(tripId, itemId, {
       unit: Unit.AMOUNT,
       amount: 5,
     });
@@ -212,7 +212,7 @@ describe("updateItem", () => {
     await buyOpenEntry(itemId);
     await openEntry(itemId, Unit.LITER, 1);
 
-    const result = await updateItem(itemId, tripId, { amount: 4 });
+    const result = await updateItem(tripId, itemId, { amount: 4 });
 
     expect(result.success).toBe(true);
     if (!result.success) return;
@@ -234,7 +234,7 @@ describe("updateItem", () => {
     silenceErrorLog();
     await buyOpenEntry(itemId);
 
-    const result = await updateItem(itemId, tripId, { amount: 4 });
+    const result = await updateItem(tripId, itemId, { amount: 4 });
 
     expect(result).toEqual({ success: false, error: "Failed to update item" });
     expect((await getHistory(itemId))[0]).toMatchObject({ amount: 2 });
@@ -245,7 +245,7 @@ describe("updateItem", () => {
     const otherTripId = await createTestTrip(owner);
     tripIds.push(otherTripId);
 
-    const result = await updateItem(itemId, otherTripId, {
+    const result = await updateItem(otherTripId, itemId, {
       name: "Cheese",
       amount: 4,
     });
@@ -258,13 +258,13 @@ describe("updateItem", () => {
   test("fails when the item does not exist", async () => {
     silenceErrorLog();
 
-    const result = await updateItem(randomUUID(), tripId, { name: "Cheese" });
+    const result = await updateItem(tripId, randomUUID(), { name: "Cheese" });
 
     expect(result).toEqual({ success: false, error: "Failed to update item" });
   });
 
   test("fails and changes nothing when the amount doesn't fit the unit", async () => {
-    const result = await updateItem(itemId, tripId, {
+    const result = await updateItem(tripId, itemId, {
       name: "Cheese",
       unit: Unit.GRAM,
       amount: 200.2,
@@ -281,9 +281,9 @@ describe("updateItem", () => {
   });
 
   test("fails when only the unit changes and the amount no longer fits", async () => {
-    await updateItem(itemId, tripId, { amount: 2.5 });
+    await updateItem(tripId, itemId, { amount: 2.5 });
 
-    const result = await updateItem(itemId, tripId, { unit: Unit.GRAM });
+    const result = await updateItem(tripId, itemId, { unit: Unit.GRAM });
 
     expect(result).toEqual({
       success: false,

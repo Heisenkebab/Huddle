@@ -12,8 +12,8 @@ import {
 export type UpdateItemResult = ActionResult<ShoppingListEntry>;
 
 export async function updateItem(
-  item_id: string,
   trip_id: string,
+  item_id: string,
   updateBody: Partial<ShoppingListItemBody>,
 ): Promise<UpdateItemResult> {
   try {
