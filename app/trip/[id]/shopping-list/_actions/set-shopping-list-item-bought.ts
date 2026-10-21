@@ -21,6 +21,6 @@ export async function setShoppingListItemBought(
     return { success: true, data: undefined };
   } catch (error) {
     console.error("changeItemBoughtState failed:", error);
-    return { success: false, data: undefined };
+    return { success: false, error: "Could not update bought state" };
   }
 }

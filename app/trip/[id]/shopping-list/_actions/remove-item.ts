@@ -19,6 +19,7 @@ export default async function removeShoppingListItem(
     }
     return { success: true, data: undefined };
   } catch (error) {
+    console.error("removeShoppingListItem failed: " + error);
     return { success: false, error: "Failed to remove shopping list item" };
   }
 }
