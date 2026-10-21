@@ -12,7 +12,11 @@ RETURNS TABLE (
   created_by uuid,
   updated_by uuid,
   unit "Unit",
-  amount numeric
+  amount numeric,
+  created_by_name text,
+  created_by_color text,
+  updated_by_name text,
+  updated_by_color text
 )
 LANGUAGE plpgsql
 SECURITY INVOKER
@@ -50,8 +54,15 @@ BEGIN
         latest.created_by,
         latest.updated_by,
         latest.unit,
-        latest.amount
+        latest.amount,
+        created_user.name as created_by_name,
+        created_user.color as created_by_color,
+        update_user.name as updated_by_name,
+        update_user.color as updated_by_color
     FROM latest
+     -- LEFT JOIN: created_by/updated_by are NULL for seed/service-role rows and deleted profiles
+    LEFT JOIN profile created_user ON latest.created_by = created_user.id 
+    LEFT JOIN profile update_user ON latest.updated_by = update_user.id
     WHERE latest.removed_at IS NULL
     AND (latest.bought_at IS NULL OR latest.bought_at > now() - interval '2 days')
     ORDER BY latest.created_at;

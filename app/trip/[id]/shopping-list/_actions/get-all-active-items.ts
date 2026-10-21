@@ -23,7 +23,10 @@ export async function getAllActiveShoppingListItems(
       throw new Error(error.message);
     }
 
-    return { success: true, data: data };
+    return {
+      success: true,
+      data: data,
+    };
   } catch (error) {
     console.error("getAllActiveShoppingListItems failed:", error);
     return {

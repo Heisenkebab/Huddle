@@ -45,6 +45,11 @@ export interface ShoppingListActiveItem {
   updated_at: string;
   created_by: string | null;
   updated_by: string | null;
+  // null when the profile is gone or the row was written by the service role
+  created_by_name: string | null;
+  created_by_color: string | null;
+  updated_by_name: string | null;
+  updated_by_color: string | null;
   bought_at: string | null;
   category: Category;
   name: string;

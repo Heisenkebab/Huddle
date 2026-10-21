@@ -10,10 +10,12 @@ import { signInAs, signOut } from "@/test/integration/session";
 import { ShoppingListItemBody, Unit } from "@/types/shopping-list";
 import { randomUUID } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { createItem } from "./create-item";
 import {
   GetActiveItemsResult,
   getAllActiveShoppingListItems,
 } from "./get-all-active-items";
+import { updateItem } from "./update-item";
 
 const admin = createAdminClient();
 
@@ -284,6 +286,61 @@ describe("getAllActiveShoppingListItems", () => {
     );
 
     expect(await getItemIds(tripId)).toEqual([oldest, middle, newest]);
+  });
+
+  test("returns the name and color of the user who added the item", async () => {
+    const created = await createItem(tripId, item);
+    if (!created.success) throw new Error(created.error);
+
+    expect(await getItems(tripId)).toEqual([
+      expect.objectContaining({
+        created_by: owner.profileId,
+        created_by_name: "Test",
+        created_by_color: "#E0A526",
+      }),
+    ]);
+  });
+
+  test("returns the name and color of the user who last changed the item", async () => {
+    const guest = await createTestUser("Guest");
+    users.push(guest);
+    const guestTripId = await createTestTrip(owner, [guest]);
+    tripIds.push(guestTripId);
+    const created = await createItem(guestTripId, item);
+    if (!created.success) throw new Error(created.error);
+    await signInAs(guest.email, TEST_PASSWORD);
+    const updated = await updateItem(
+      created.data.shopping_list_item_id,
+      guestTripId,
+      { amount: 3 },
+    );
+    if (!updated.success) throw new Error(updated.error);
+
+    expect(await getItems(guestTripId)).toEqual([
+      expect.objectContaining({
+        created_by_name: "Test",
+        updated_by: guest.profileId,
+        updated_by_name: "Guest",
+        updated_by_color: "#E0A526",
+      }),
+    ]);
+  });
+
+  // Items written by the service role have no author, but must still show up
+  test("returns an item without an author, with null name and color", async () => {
+    const itemId = await seedItem(tripId);
+
+    expect(await getItems(tripId)).toEqual([
+      expect.objectContaining({
+        id: itemId,
+        created_by: null,
+        created_by_name: null,
+        created_by_color: null,
+        updated_by: null,
+        updated_by_name: null,
+        updated_by_color: null,
+      }),
+    ]);
   });
 
   test("lets a guest of the trip see its items", async () => {
