@@ -163,6 +163,11 @@ isOneToOne: false
 "current_profile_id":
 { Args: Record<PropertyKey, never>; Returns: string
                            },
+"get_all_active_shopping_list_items":
+{ Args: { "p_trip_id": string }; Returns: {
+              "amount": number,"bought_at": string,"category": Database["public"]['Enums']["Category"],"created_at": string,"created_by": string,"id": string,"name": string,"trip_id": string,"unit": Database["public"]['Enums']["Unit"],"updated_at": string,"updated_by": string
+            }[]
+                           },
 "is_anonymous_user":
 { Args: Record<PropertyKey, never>; Returns: boolean
                            },

@@ -38,14 +38,16 @@ export interface CreatedShoppingListEntry extends ShoppingListEntry {
   merged: boolean;
 }
 
-export interface ShoppingListHistory {
+export interface ShoppingListActiveItem {
   id: string;
   trip_id: string;
   created_at: string;
-  shopping_list_item_id: string;
+  updated_at: string;
+  created_by: string | null;
+  updated_by: string | null;
   bought_at: string | null;
-  removed_at: string | null;
+  category: Category;
+  name: string;
   unit: Unit;
   amount: number;
-  shopping_list_item?: ShoppingListItem;
 }

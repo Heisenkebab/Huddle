@@ -59,9 +59,48 @@ insert into public.shopping_list_item (id, trip_id, name, category) values
   ('b0000000-0000-4000-8000-000000000004', '7c1f3a52-9d4e-4b8a-a6f1-2e5d8c0b4a17', 'Grillkohle', 'OTHER'),
   ('b0000000-0000-4000-8000-000000000005', '7c1f3a52-9d4e-4b8a-a6f1-2e5d8c0b4a17', 'Bier',       'DRINKS');
 
-insert into public.shopping_list_history (shopping_list_item_id, created_at, unit, amount) values
-  ('b0000000-0000-4000-8000-000000000001', now() - interval '50 minutes', 'LITER',  2),
-  ('b0000000-0000-4000-8000-000000000002', now() - interval '40 minutes', 'AMOUNT', 4),
-  ('b0000000-0000-4000-8000-000000000003', now() - interval '30 minutes', 'AMOUNT', 4),
-  ('b0000000-0000-4000-8000-000000000004', now() - interval '20 minutes', 'AMOUNT', 1),
-  ('b0000000-0000-4000-8000-000000000005', now() - interval '10 minutes', 'AMOUNT', 2);
+insert into public.shopping_list_history (shopping_list_item_id, created_at, unit, amount, bought_at) values
+  ('b0000000-0000-4000-8000-000000000001', now() - interval '50 minutes', 'LITER',  2, null),
+  ('b0000000-0000-4000-8000-000000000002', now() - interval '40 minutes', 'AMOUNT', 4, null),
+  ('b0000000-0000-4000-8000-000000000003', now() - interval '90 minutes', 'AMOUNT', 4, now() - interval '60 minutes'),
+  ('b0000000-0000-4000-8000-000000000003', now() - interval '30 minutes', 'AMOUNT', 4, null),
+  ('b0000000-0000-4000-8000-000000000004', now() - interval '20 minutes', 'AMOUNT', 1, null),
+  ('b0000000-0000-4000-8000-000000000005', now() - interval '10 minutes', 'AMOUNT', 2, null);
+
+-- Edge cases for "newest entry per item". Expected result for Gardasee:
+--   Milch, Joghurt, Grillkohle, Bier  open (one entry each)
+--   Baguette    open    (bought earlier, then added again)
+--   Tomaten     bought  (only entry is bought)
+--   Würstchen   bought  (bought twice; only the newer entry, 500 g)
+--   Ketchup     open    (removed earlier, then added again)
+--   Chips       gone    (only entry is removed)
+--   Käse        gone    (bought earlier, added again, then removed)
+--   Sonnencreme gone    (belongs to another trip)
+insert into public.trip (id, owner_id, name, start_date, end_date) values
+  ('7c1f3a52-9d4e-4b8a-a6f1-2e5d8c0b4a18', 'a0000000-0000-4000-8000-000000000003',
+   'Wien', now() + interval '20 days', now() + interval '23 days');
+
+insert into public.shopping_list_item (id, trip_id, name, category) values
+  ('b0000000-0000-4000-8000-000000000006', '7c1f3a52-9d4e-4b8a-a6f1-2e5d8c0b4a17', 'Tomaten',     'PRODUCE'),
+  ('b0000000-0000-4000-8000-000000000007', '7c1f3a52-9d4e-4b8a-a6f1-2e5d8c0b4a17', 'Würstchen',   'BBQ'),
+  ('b0000000-0000-4000-8000-000000000008', '7c1f3a52-9d4e-4b8a-a6f1-2e5d8c0b4a17', 'Ketchup',     'OTHER'),
+  ('b0000000-0000-4000-8000-000000000009', '7c1f3a52-9d4e-4b8a-a6f1-2e5d8c0b4a17', 'Chips',       'OTHER'),
+  ('b0000000-0000-4000-8000-000000000010', '7c1f3a52-9d4e-4b8a-a6f1-2e5d8c0b4a17', 'Käse',        'CHILLED'),
+  ('b0000000-0000-4000-8000-000000000011', '7c1f3a52-9d4e-4b8a-a6f1-2e5d8c0b4a18', 'Sonnencreme', 'OTHER');
+
+insert into public.shopping_list_history (shopping_list_item_id, created_at, unit, amount, bought_at, removed_at) values
+  -- Tomaten: bought
+  ('b0000000-0000-4000-8000-000000000006', now() - interval '3 hours',   'KILOGRAM', 0.5, now() - interval '2 hours',   null),
+  -- Würstchen: bought, then added again and bought again
+  ('b0000000-0000-4000-8000-000000000007', now() - interval '2 days',    'AMOUNT',   8,   now() - interval '2 days',    null),
+  ('b0000000-0000-4000-8000-000000000007', now() - interval '1 day',     'GRAM',     500, now() - interval '20 hours',  null),
+  -- Ketchup: removed, then added again
+  ('b0000000-0000-4000-8000-000000000008', now() - interval '5 hours',   'AMOUNT',   1,   null,                         now() - interval '4 hours'),
+  ('b0000000-0000-4000-8000-000000000008', now() - interval '15 minutes', 'AMOUNT',  2,   null,                         null),
+  -- Chips: removed
+  ('b0000000-0000-4000-8000-000000000009', now() - interval '2 hours',   'AMOUNT',   3,   null,                         now() - interval '1 hour'),
+  -- Käse: bought, added again, then removed
+  ('b0000000-0000-4000-8000-000000000010', now() - interval '1 day',     'GRAM',     200, now() - interval '1 day',     null),
+  ('b0000000-0000-4000-8000-000000000010', now() - interval '1 hour',    'GRAM',     300, null,                         now() - interval '30 minutes'),
+  -- Sonnencreme: open, but in trip Wien
+  ('b0000000-0000-4000-8000-000000000011', now() - interval '1 hour',    'AMOUNT',   1,   null,                         null);

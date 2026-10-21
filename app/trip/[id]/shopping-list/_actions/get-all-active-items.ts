@@ -2,9 +2,9 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { ActionResult } from "@/types/action-result";
-import { ShoppingListHistory } from "@/types/shopping-list";
+import { ShoppingListActiveItem } from "@/types/shopping-list";
 
-export type GetActiveItemsResult = ActionResult<ShoppingListHistory[]>;
+export type GetActiveItemsResult = ActionResult<ShoppingListActiveItem[]>;
 
 export async function getAllActiveShoppingListItems(
   tripId: string,
@@ -12,56 +12,18 @@ export async function getAllActiveShoppingListItems(
   try {
     const supabase = await createClient();
 
-    const { data, error } = await supabase
-      .from("shopping_list_history")
-      .select(
-        `
-        id,
-        created_at,
-        shopping_list_item_id,
-        bought_at,
-        removed_at,
-        unit,
-        amount,
-        shopping_list_item!inner (
-          id,
-          trip_id,
-          category,
-          name
-        )
-      `,
-      )
-      .eq("shopping_list_item.trip_id", tripId)
-      .is("bought_at", null)
-      .is("removed_at", null)
-      .order("created_at", { ascending: true });
+    const { data, error } = await supabase.rpc(
+      "get_all_active_shopping_list_items",
+      {
+        p_trip_id: tripId,
+      },
+    );
 
     if (error) {
       throw new Error(error.message);
     }
 
-    const formattedItems: ShoppingListHistory[] = data.map((record) => {
-      const shoppingListItem = record.shopping_list_item;
-      return {
-        id: record.id,
-        trip_id: shoppingListItem.trip_id,
-        created_at: record.created_at,
-        shopping_list_item_id: record.shopping_list_item_id,
-        bought_at: record.bought_at,
-        removed_at: record.removed_at,
-        unit: record.unit,
-        amount: Number(record.amount),
-        shopping_list_item: shoppingListItem
-          ? {
-              id: shoppingListItem.id,
-              category: shoppingListItem.category,
-              name: shoppingListItem.name,
-            }
-          : undefined,
-      };
-    });
-
-    return { success: true, data: formattedItems };
+    return { success: true, data: data };
   } catch (error) {
     console.error("getAllActiveShoppingListItems failed:", error);
     return {
