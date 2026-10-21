@@ -1,4 +1,5 @@
 import { createItem } from "@/app/trip/[id]/shopping-list/_actions/create-item";
+import { Database } from "@/types/database.types";
 import { Category, Unit } from "@/types/shopping-list";
 import {
   afterAll,
@@ -74,7 +75,7 @@ afterAll(async () => {
   );
 });
 
-async function visibleRows(table: string) {
+async function visibleRows(table: keyof Database["public"]["Tables"]) {
   const { data, error } = await createSessionClient().from(table).select("*");
   if (error) throw error;
   return data;
