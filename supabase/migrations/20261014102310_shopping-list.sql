@@ -93,7 +93,10 @@ CREATE TABLE "shopping_list_history" (
   "updated_by" uuid REFERENCES "profile" ("id") ON DELETE SET NULL,
   "created_by" uuid REFERENCES "profile" ("id") ON DELETE SET NULL,
   CONSTRAINT "shopping_list_history_amount_check"
-    CHECK (is_valid_amount("unit", "amount"))
+    CHECK (is_valid_amount("unit", "amount")),
+  -- A bought entry can't be removed, and a removed entry can't be bought
+  CONSTRAINT "shopping_list_history_bought_or_removed_check"
+    CHECK ("bought_at" IS NULL OR "removed_at" IS NULL)
 );
 
 -- At most one open (not bought, not removed) entry per item

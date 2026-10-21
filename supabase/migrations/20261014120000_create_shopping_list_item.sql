@@ -106,8 +106,7 @@ BEGIN
       USING HINT = 'unit_mismatch';
   ELSE
     UPDATE shopping_list_history
-    SET amount = amount + p_amount * unit_factor(p_unit) / unit_factor(v_open_unit),
-        updated_at = now()
+    SET amount = amount + p_amount * unit_factor(p_unit) / unit_factor(v_open_unit)
     WHERE id = v_history_id;
 
     v_merged := true;

@@ -66,8 +66,7 @@ BEGIN
 
     UPDATE shopping_list_history
     SET unit = v_unit,
-        amount = v_amount,
-        updated_at = now()
+        amount = v_amount
     WHERE id = v_history_id;
   END IF;
 

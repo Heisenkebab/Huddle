@@ -9,8 +9,7 @@ AS $$
 BEGIN
 
   UPDATE shopping_list_history
-  SET removed_at = now(),
-      updated_at = now()
+  SET removed_at = now()
   WHERE id = (
       SELECT h.id
       FROM shopping_list_history h

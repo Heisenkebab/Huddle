@@ -10,8 +10,7 @@ AS $$
 BEGIN
   UPDATE shopping_list_history
   -- Buying an entry that is already bought keeps its first date
-  SET bought_at = CASE WHEN p_bought THEN COALESCE(bought_at, now()) END,
-      updated_at = now()
+  SET bought_at = CASE WHEN p_bought THEN COALESCE(bought_at, now()) END
   WHERE id = (
       SELECT h.id
       FROM shopping_list_history h
