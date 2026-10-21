@@ -7,7 +7,7 @@ export type RemoveShoppingListItemResult = ActionResult<undefined>;
 export default async function removeShoppingListItem(
   tripId: string,
   itemId: string,
-) {
+): Promise<RemoveShoppingListItemResult> {
   try {
     const supabase = await createClient();
     const { error } = await supabase.rpc("remove_shopping_list_item", {

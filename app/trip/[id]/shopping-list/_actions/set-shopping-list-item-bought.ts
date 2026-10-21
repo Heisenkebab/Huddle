@@ -9,7 +9,7 @@ export async function setShoppingListItemBought(
   trip_id: string,
   item_id: string,
   bought: boolean,
-) {
+): Promise<ChangeBoughtItemStateResult> {
   try {
     const supabase = await createClient();
     const { error } = await supabase.rpc("set_shopping_list_item_bought", {
