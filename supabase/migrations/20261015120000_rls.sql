@@ -123,10 +123,12 @@ CREATE POLICY "users create trips they own"
     AND NOT public.is_anonymous_user()
   );
 
+-- WITH CHECK sees the new row; is_trip_owner() would still read the old one,
+-- so an owner could hand the trip to anyone
 CREATE POLICY "owner updates the trip"
   ON public.trip FOR UPDATE TO authenticated
   USING (public.is_trip_owner(id))
-  WITH CHECK (public.is_trip_owner(id));
+  WITH CHECK (owner_id = public.current_profile_id());
 
 CREATE POLICY "owner deletes the trip"
   ON public.trip FOR DELETE TO authenticated

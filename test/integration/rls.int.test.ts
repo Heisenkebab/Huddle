@@ -183,6 +183,50 @@ describe("signed-in user", () => {
   });
 });
 
+describe("owner", () => {
+  // Own trip, so a successful transfer can't break the other tests
+  let ownTripId: string;
+
+  beforeAll(async () => {
+    ownTripId = await createTestTrip(owner);
+    createdTripIds.push(ownTripId);
+  });
+
+  test("cannot hand the trip to someone else", async () => {
+    await signInAs(owner.email, TEST_PASSWORD);
+
+    const { error } = await createSessionClient()
+      .from("trip")
+      .update({ owner_id: outsider.profileId })
+      .eq("id", ownTripId);
+
+    expect(error?.code).toBe("42501");
+    const { data } = await admin
+      .from("trip")
+      .select("owner_id")
+      .eq("id", ownTripId)
+      .single();
+    expect(data?.owner_id).toBe(owner.profileId);
+  });
+
+  test("can rename the trip", async () => {
+    await signInAs(owner.email, TEST_PASSWORD);
+
+    const { error } = await createSessionClient()
+      .from("trip")
+      .update({ name: "Umbenannt" })
+      .eq("id", ownTripId);
+
+    expect(error).toBeNull();
+    const { data } = await admin
+      .from("trip")
+      .select("name")
+      .eq("id", ownTripId)
+      .single();
+    expect(data?.name).toBe("Umbenannt");
+  });
+});
+
 describe("guest", () => {
   test("sees the trip, its items and history", async () => {
     await signInAs(guest.email, TEST_PASSWORD);
