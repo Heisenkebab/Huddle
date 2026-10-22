@@ -135,7 +135,7 @@ isOneToOne: false
                     "created_at": string,"ending_at": string,"id": string,"invite_id": string,"trip_id": string
                   }
                   Insert: {
-                    "created_at"?: string,"ending_at"?: string,"id"?: string,"invite_id": string,"trip_id": string
+                    "created_at"?: string,"ending_at"?: string,"id"?: string,"invite_id"?: string,"trip_id": string
                   }
                   Update: {
                     "created_at"?: string,"ending_at"?: string,"id"?: string,"invite_id"?: string,"trip_id"?: string

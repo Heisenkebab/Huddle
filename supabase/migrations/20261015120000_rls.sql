@@ -135,15 +135,19 @@ CREATE POLICY "owner deletes the trip"
   USING (public.is_trip_owner(id));
 
 -- trip_invite -----------------------------------------------------------------
--- Only the owner may create or regenerate the link. Joining with a link can't
--- go through this table (the joiner is no member yet), so that will need a
--- SECURITY DEFINER function like join_trip(invite_id).
+-- Only the owner may create or regenerate the link (delete + insert). Joining
+-- with a link can't go through this table (the joiner is no member yet), so
+-- that will need a SECURITY DEFINER function like join_trip(invite_id).
 ALTER TABLE public.trip_invite ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "members manage the trip's invite"
+CREATE POLICY "owner manages the trip's invite"
   ON public.trip_invite FOR ALL TO authenticated
   USING (public.is_trip_owner(trip_id))
   WITH CHECK (public.is_trip_owner(trip_id));
+
+-- Clients only pick the trip; invite_id and ending_at come from the defaults
+REVOKE INSERT, UPDATE ON public.trip_invite FROM anon, authenticated;
+GRANT INSERT (trip_id) ON public.trip_invite TO authenticated;
 
 -- guest_trip ------------------------------------------------------------------
 -- No insert policy: guests are added by the join function mentioned above

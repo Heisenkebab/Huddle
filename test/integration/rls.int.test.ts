@@ -225,6 +225,77 @@ describe("owner", () => {
       .single();
     expect(data?.name).toBe("Umbenannt");
   });
+
+  describe("invite link", () => {
+    async function createInvite() {
+      const { data, error } = await createSessionClient()
+        .from("trip_invite")
+        .insert({ trip_id: ownTripId })
+        .select("invite_id")
+        .single();
+      if (error) throw error;
+      return data.invite_id;
+    }
+
+    afterEach(async () => {
+      await admin.from("trip_invite").delete().eq("trip_id", ownTripId);
+    });
+
+    test("gets a generated invite id", async () => {
+      await signInAs(owner.email, TEST_PASSWORD);
+
+      expect(await createInvite()).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+      );
+    });
+
+    test("cannot choose the invite id", async () => {
+      await signInAs(owner.email, TEST_PASSWORD);
+
+      const { error } = await createSessionClient()
+        .from("trip_invite")
+        .insert({ trip_id: ownTripId, invite_id: crypto.randomUUID() });
+
+      expect(error?.code).toBe("42501");
+    });
+
+    test("cannot change the invite id", async () => {
+      await signInAs(owner.email, TEST_PASSWORD);
+      const inviteId = await createInvite();
+
+      const { error } = await createSessionClient()
+        .from("trip_invite")
+        .update({ invite_id: crypto.randomUUID() })
+        .eq("trip_id", ownTripId);
+
+      expect(error?.code).toBe("42501");
+      const { data } = await admin
+        .from("trip_invite")
+        .select("invite_id")
+        .eq("trip_id", ownTripId)
+        .single();
+      expect(data?.invite_id).toBe(inviteId);
+    });
+
+    test("regenerates the link by deleting and creating it", async () => {
+      await signInAs(owner.email, TEST_PASSWORD);
+      const oldInviteId = await createInvite();
+
+      const { error } = await createSessionClient()
+        .from("trip_invite")
+        .delete()
+        .eq("trip_id", ownTripId);
+      expect(error).toBeNull();
+      const newInviteId = await createInvite();
+
+      expect(newInviteId).not.toBe(oldInviteId);
+      const { data } = await admin
+        .from("trip_invite")
+        .select("invite_id")
+        .eq("trip_id", ownTripId);
+      expect(data).toEqual([{ invite_id: newInviteId }]);
+    });
+  });
 });
 
 describe("guest", () => {
@@ -297,14 +368,12 @@ describe("guest", () => {
   test("cannot regenerate the invite link", async () => {
     await signInAs(guest.email, TEST_PASSWORD);
 
-    const { data, error } = await createSessionClient()
+    const { error } = await createSessionClient()
       .from("trip_invite")
       .update({ invite_id: crypto.randomUUID() })
-      .eq("trip_id", tripId)
-      .select("id");
+      .eq("trip_id", tripId);
 
-    expect(error).toBeNull();
-    expect(data).toHaveLength(0);
+    expect(error?.code).toBe("42501");
   });
 
   test("cannot delete the trip", async () => {
