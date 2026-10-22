@@ -1,9 +1,10 @@
 -- Which group a unit belongs to. Amounts of units in the same group can be
 -- added together after converting them with unit_factor.
-CREATE OR REPLACE FUNCTION unit_group(p_unit "Unit")
+CREATE OR REPLACE FUNCTION public.unit_group(p_unit public."Unit")
 RETURNS text
 LANGUAGE sql
 IMMUTABLE
+SET search_path = ''
 AS $$
   SELECT CASE p_unit
     WHEN 'KILOGRAM' THEN 'mass'
@@ -15,10 +16,11 @@ AS $$
 $$;
 
 -- How many base units (g, ml, pieces) one of the unit is
-CREATE OR REPLACE FUNCTION unit_factor(p_unit "Unit")
+CREATE OR REPLACE FUNCTION public.unit_factor(p_unit public."Unit")
 RETURNS numeric
 LANGUAGE sql
 IMMUTABLE
+SET search_path = ''
 AS $$
   SELECT CASE p_unit
     WHEN 'KILOGRAM' THEN 1000

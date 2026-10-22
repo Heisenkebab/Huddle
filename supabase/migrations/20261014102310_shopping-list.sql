@@ -71,10 +71,11 @@ CREATE UNIQUE INDEX "shopping_list_item_trip_name_idx"
 -- Amounts must be positive. Grams, milliliters and pieces are whole numbers;
 -- kilograms and liters have at most 3 decimals, so converting them into grams
 -- or milliliters always gives a whole number. At most 10000 (MAX_QUANTITY).
-CREATE OR REPLACE FUNCTION is_valid_amount(p_unit "Unit", p_amount numeric)
+CREATE OR REPLACE FUNCTION public.is_valid_amount(p_unit public."Unit", p_amount numeric)
 RETURNS boolean
 LANGUAGE sql
 IMMUTABLE
+SET search_path = ''
 AS $$
   SELECT p_amount > 0
     AND p_amount <= 10000
@@ -98,7 +99,7 @@ CREATE TABLE "shopping_list_history" (
   "updated_by" uuid REFERENCES "profile" ("id") ON DELETE SET NULL,
   "created_by" uuid REFERENCES "profile" ("id") ON DELETE SET NULL,
   CONSTRAINT "shopping_list_history_amount_check"
-    CHECK (is_valid_amount("unit", "amount")),
+    CHECK (public.is_valid_amount("unit", "amount")),
   -- A bought entry can't be removed, and a removed entry can't be bought
   CONSTRAINT "shopping_list_history_bought_or_removed_check"
     CHECK ("bought_at" IS NULL OR "removed_at" IS NULL)
