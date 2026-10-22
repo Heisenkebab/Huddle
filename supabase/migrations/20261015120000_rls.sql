@@ -71,6 +71,20 @@ AS $$
   SELECT coalesce((auth.jwt() ->> 'is_anonymous')::boolean, false);
 $$;
 
+-- The policies only run for authenticated, so anon doesn't need these.
+-- current_profile_id stays callable: lib/trip-access.ts uses its NULL to
+-- detect visitors who aren't signed in.
+REVOKE EXECUTE ON FUNCTION
+  public.is_trip_owner(uuid),
+  public.is_trip_member(uuid),
+  public.shares_trip_with(uuid)
+FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION
+  public.is_trip_owner(uuid),
+  public.is_trip_member(uuid),
+  public.shares_trip_with(uuid)
+TO authenticated;
+
 -- profile ---------------------------------------------------------------------
 ALTER TABLE public.profile ENABLE ROW LEVEL SECURITY;
 
