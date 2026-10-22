@@ -1,7 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { createContext, useContext, useMemo, useState } from "react";
 import type { TripAccess } from "@/lib/trip-access";
 import type { Person } from "@/lib/types";
 
@@ -9,8 +8,7 @@ type Author = { name: string; color: string };
 
 type TripContextValue = TripAccess & {
   tripId: string;
-  onlineCount: number;
-  /** Fellow travellers: online (presence) + known authors from the list */
+  /** Fellow travellers: me + known authors from the list */
   people: Person[];
   setAuthors: (authors: Author[]) => void;
 };
@@ -40,34 +38,7 @@ export function TripProvider({
   children: React.ReactNode;
 }) {
   const { trip, profile } = access;
-  const [online, setOnline] = useState<
-    { key: string; name: string; color: string }[]
-  >([]);
   const [authors, setAuthors] = useState<Author[]>([]);
-
-  /* Who is online right now (Supabase Presence) */
-  useEffect(() => {
-    const supabase = createClient();
-    const channel = supabase.channel(`presence:${trip.id}`, {
-      config: { presence: { key: profile.id } },
-    });
-    channel
-      .on("presence", { event: "sync" }, () => {
-        const state = channel.presenceState<{ name: string; color: string }>();
-        setOnline(
-          Object.entries(state).flatMap(([key, [meta]]) =>
-            meta ? [{ key, name: meta.name, color: meta.color }] : [],
-          ),
-        );
-      })
-      .subscribe(async (status) => {
-        if (status === "SUBSCRIBED")
-          await channel.track({ name: profile.name, color: profile.color });
-      });
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [trip.id, profile.id, profile.name, profile.color]);
 
   const people = useMemo<Person[]>(() => {
     const list: Person[] = [
@@ -75,14 +46,9 @@ export function TripProvider({
         key: profile.id,
         name: profile.name,
         color: profile.color,
-        online: true,
         isMe: true,
       },
     ];
-    for (const o of online) {
-      if (o.key === profile.id) continue;
-      list.push({ ...o, online: true, isMe: false });
-    }
     const seen = new Set(list.map((p) => p.name.toLowerCase()));
     for (const a of authors) {
       if (seen.has(a.name.toLowerCase())) continue;
@@ -91,17 +57,15 @@ export function TripProvider({
         key: `author:${a.name}`,
         name: a.name,
         color: a.color,
-        online: false,
         isMe: false,
       });
     }
     return list;
-  }, [profile, online, authors]);
+  }, [profile, authors]);
 
   const value: TripContextValue = {
     ...access,
     tripId: trip.id,
-    onlineCount: Math.max(1, online.length),
     people,
     setAuthors,
   };

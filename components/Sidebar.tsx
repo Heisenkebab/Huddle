@@ -91,13 +91,6 @@ export default function Sidebar() {
                   </span>
                 )}
               </span>
-              <span
-                className={cn(
-                  "size-1.5 rounded-full",
-                  p.online ? "bg-emerald-500" : "bg-border",
-                )}
-                aria-label={p.online ? t("trip.online") : t("trip.offline")}
-              />
             </li>
           ))}
         </ul>

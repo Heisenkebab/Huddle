@@ -61,6 +61,5 @@ export type Person = {
   key: string;
   name: string;
   color: string;
-  online: boolean;
   isMe: boolean;
 };
