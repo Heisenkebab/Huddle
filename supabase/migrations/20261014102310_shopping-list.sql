@@ -22,8 +22,6 @@ CREATE TABLE "profile" (
   "name" text NOT NULL,
   -- Hex color like '#E0A526'
   "color" text NOT NULL,
-  "emoji" text,
-  "image_url" text,
   "created_at" timestamptz NOT NULL DEFAULT now(),
   "updated_at" timestamptz NOT NULL DEFAULT now()
 );

@@ -107,6 +107,17 @@ describe("outsider", () => {
     expect(profiles.map((p) => p.id)).toEqual([outsider.profileId]);
   });
 
+  test("cannot set a profile colour that isn't a hex colour", async () => {
+    await signInAs(outsider.email, TEST_PASSWORD);
+
+    const { error } = await createSessionClient()
+      .from("profile")
+      .update({ color: "url(https://attacker.example/t)" })
+      .eq("id", outsider.profileId);
+
+    expect(error?.code).toBe("23514");
+  });
+
   test("cannot add an item to the trip", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     await signInAs(outsider.email, TEST_PASSWORD);
