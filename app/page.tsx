@@ -1,19 +1,7 @@
-import { redirect } from "next/navigation";
 import { useTranslations } from "next-intl";
 
-/**
- * Initial-Setup: Mit NEXT_PUBLIC_TRIP_ID (z. B. die Demo-Reise aus seed.sql)
- * landet man direkt in der Einkaufsliste. Sonst öffnet man eine Reise über
- * ihren Link /trip/<id>.
- */
+/** Home page: a trip is opened through its link /trip/<id>. */
 export default function Home() {
-  const demoTrip = process.env.NEXT_PUBLIC_TRIP_ID;
-  if (demoTrip) redirect(`/trip/${demoTrip}/shopping-list`);
-
-  return <HomeContent />;
-}
-
-function HomeContent() {
   const t = useTranslations("home");
 
   return (

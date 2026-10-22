@@ -58,6 +58,7 @@
     "empty": "The list is still empty. Add the first item.",
     "hint": "Tap = bought · Press and hold for details",
     "loadFailed": "Couldn't load the list.",
+    "retry": "Try again",
     "saveFailed": "Couldn't save the change.",
     "deleteFailed": "Couldn't delete the item.",
     "restoreFailed": "Restoring failed.",
@@ -66,6 +67,7 @@
     "delete": "Delete",
     "addedBy": "Added by {name}",
     "whatsAppTitle": "Shopping list",
+    "bought": "Bought · {count}",
     "allDone": "All done ✅",
     "copiedForWhatsApp": "List copied for WhatsApp"
   },

@@ -9,7 +9,8 @@ import "./globals.css";
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata");
   return {
-    title: "Huddle",
+    // Pages only set their own part, e.g. "Shopping list · Trip · Huddle"
+    title: { default: "Huddle", template: "%s · Huddle" },
     description: t("description"),
   };
 }

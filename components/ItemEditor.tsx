@@ -37,6 +37,7 @@ import {
   type ShoppingItemInput,
   type UnitKey,
 } from "@/lib/types";
+import { authorOf, ITEM_NAME_MAX_LENGTH } from "@/lib/shopping-list";
 import { DESKTOP_QUERY, useMediaQuery } from "@/lib/use-media-query";
 import { cn } from "@/lib/utils";
 import { Check, Info, Minus, Plus, Tag, Trash2, X } from "lucide-react";
@@ -55,7 +56,7 @@ type Props = {
   onDelete?: () => void;
 };
 
-/** Mobil: Bottom Sheet (Drawer). Laptop: zentrierter Dialog. */
+/** Mobile: bottom sheet (drawer). Laptop: centered dialog. */
 export default function ItemEditor(props: Props) {
   const isDesktop = useMediaQuery(DESKTOP_QUERY);
 
@@ -116,6 +117,7 @@ function ItemForm({
   const locale = useLocale();
   const item = target.mode === "edit" ? target.item : undefined;
   const isDialog = layout === "dialog";
+  const author = item && authorOf(item, t("trip.guest"));
 
   const [name, setName] = useState(item?.name ?? "");
   const [qtyText, setQtyText] = useState(
@@ -205,7 +207,7 @@ function ItemForm({
           "overflow-y-auto px-5 pb-[calc(20px+env(safe-area-inset-bottom))]",
       )}
     >
-      {/* Kopf */}
+      {/* Header */}
       <div
         className={cn(
           "flex items-start justify-between gap-3",
@@ -218,14 +220,10 @@ function ItemForm({
               ? t("itemEditor.addTitle")
               : t("itemEditor.editTitle")}
           </Title>
-          {item ? (
+          {item && author ? (
             <Description className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-              <PersonAvatar
-                name={item.added_by_name}
-                color={item.added_by_color}
-                size={14}
-              />
-              {t("itemEditor.addedBy", { name: item.added_by_name })} ·{" "}
+              <PersonAvatar name={author.name} color={author.color} size={14} />
+              {t("itemEditor.addedBy", { name: author.name })} ·{" "}
               {formatAddedAt(item.created_at, locale)}
             </Description>
           ) : (
@@ -247,7 +245,7 @@ function ItemForm({
         </Close>
       </div>
 
-      {/* Artikel */}
+      {/* Item */}
       <Label
         htmlFor="item-name"
         className="mt-4 mb-2 text-[13px] font-semibold"
@@ -263,13 +261,13 @@ function ItemForm({
           placeholder={t("itemEditor.namePlaceholder")}
           autoComplete="off"
           enterKeyHint="done"
-          maxLength={80}
+          maxLength={ITEM_NAME_MAX_LENGTH}
           autoFocus={target.mode === "add"}
           className="h-11 rounded-2xl bg-card pl-10 text-base md:text-base"
         />
       </div>
 
-      {/* Menge (+ Einheit daneben am Laptop) */}
+      {/* Quantity (+ unit next to it on laptop) */}
       <Label id="qty-label" className="mt-4 mb-2 text-[13px] font-semibold">
         {t("itemEditor.quantity")}
       </Label>

@@ -1,5 +1,6 @@
 "use server";
 
+import { isValidItemName } from "@/lib/shopping-list";
 import { createClient } from "@/lib/supabase/server";
 import { ActionResult } from "@/types/action-result";
 import {
@@ -15,6 +16,10 @@ export async function createItem(
   trip_id: string,
   item: ShoppingListItemBody,
 ): Promise<CreateItemResult> {
+  if (!isValidItemName(item.name)) {
+    return { success: false, error: "Invalid item name" };
+  }
+
   try {
     const supabase = await createClient();
 

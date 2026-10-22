@@ -47,7 +47,7 @@ describe("formatTripDates", () => {
   test("English", () => {
     expect(formatTripDates("2026-06-12", null, "en")).toBe("June 12");
     expect(formatTripDates("2026-06-12", "2026-06-14", "en")).toBe(
-      "June 12\u2009–\u200914",
+      "June 12 – 14",
     );
   });
 

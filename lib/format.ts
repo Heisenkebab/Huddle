@@ -112,6 +112,16 @@ export function formatTripDates(
     month: "long",
   });
   const s = new Date(`${start}T00:00:00`);
-  if (!end || end === start) return format.format(s);
-  return format.formatRange(s, new Date(`${end}T00:00:00`));
+  const text =
+    !end || end === start
+      ? format.format(s)
+      : format.formatRange(s, new Date(`${end}T00:00:00`));
+  return normalizeSpaces(text);
+}
+
+// Node and browsers ship different ICU versions, which put different special
+// spaces (thin, narrow no-break) around the "–" of a range. Plain spaces keep
+// the server-rendered text identical to the client's and avoid hydration errors.
+function normalizeSpaces(text: string): string {
+  return text.replace(/[   ]/g, " ");
 }

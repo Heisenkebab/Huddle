@@ -1,162 +1,87 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { useTranslations } from "next-intl";
-import { getSupabase, isTripId } from "@/lib/supabase";
-import { GUEST_NAME, useMember, type Member } from "@/lib/member";
-import type { Person, Trip } from "@/lib/types";
+import { createClient } from "@/lib/supabase/client";
+import type { TripAccess } from "@/lib/trip-access";
+import type { Person } from "@/lib/types";
 
 type Author = { name: string; color: string };
 
-type TripContextValue = {
+type TripContextValue = TripAccess & {
   tripId: string;
-  trip: Trip | null;
-  loading: boolean;
-  /** Fehlermeldung beim Laden der Reise (wird als Hinweis angezeigt) */
-  error: string | null;
-  /** Vorschaumodus: nichts wird gespeichert, alles nur lokal */
-  localMode: boolean;
-  member: Member;
   onlineCount: number;
-  /** Mitreisende: online (Presence) + bekannte Autor:innen aus der Liste */
+  /** Fellow travellers: online (presence) + known authors from the list */
   people: Person[];
   setAuthors: (authors: Author[]) => void;
-  enterLocalMode: (message: string) => void;
 };
 
 const TripContext = createContext<TripContextValue | null>(null);
 
 export function useTrip() {
   const ctx = useContext(TripContext);
-  if (!ctx)
-    throw new Error(
-      "useTrip muss innerhalb von <TripProvider> verwendet werden",
-    );
+  if (!ctx) throw new Error("useTrip must be used inside <TripProvider>");
   return ctx;
 }
 
-export function errorMessage(e: unknown, fallback: string) {
-  if (e instanceof Error && e.message) return e.message;
-  if (
-    e &&
-    typeof e === "object" &&
-    "message" in e &&
-    typeof e.message === "string"
-  )
-    return e.message;
-  return fallback;
+/**
+ * Trip, own profile and role. The layout already checked sign-in and
+ * membership on the server (getTripAccess), so nothing here is null.
+ */
+export function useTripAccess(): TripAccess {
+  const { trip, profile, isOwner } = useTrip();
+  return { trip, profile, isOwner };
 }
 
 export function TripProvider({
-  tripId,
+  access,
   children,
 }: {
-  tripId: string;
+  access: TripAccess;
   children: React.ReactNode;
 }) {
-  const t = useTranslations("trip");
-  const member = useMember();
-  const [trip, setTrip] = useState<Trip | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [localMode, setLocalMode] = useState(false);
+  const { trip, profile } = access;
   const [online, setOnline] = useState<
     { key: string; name: string; color: string }[]
   >([]);
   const [authors, setAuthors] = useState<Author[]>([]);
 
-  const enterLocalMode = (message: string) => {
-    setError((prev) => prev ?? message);
-    setLocalMode(true);
-  };
-
-  /* Reise laden */
+  /* Who is online right now (Supabase Presence) */
   useEffect(() => {
-    if (!isTripId(tripId)) {
-      enterLocalMode(t("notFound"));
-      setLoading(false);
-      return;
-    }
-    let cancelled = false;
-    (async () => {
-      try {
-        const { data, error } = await getSupabase()
-          .from("trips")
-          .select("*")
-          .eq("id", tripId)
-          .maybeSingle();
-        if (cancelled) return;
-        if (error) throw error;
-        if (!data) throw new Error(t("notFound"));
-        setTrip({
-          id: data.id,
-          name: data.name ?? "",
-          start_date: data.start_date ?? null,
-          end_date: data.end_date ?? null,
-        });
-      } catch (e) {
-        if (!cancelled) enterLocalMode(errorMessage(e, t("loadFailed")));
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tripId]);
-
-  /* Wer ist gerade online (Supabase Presence) */
-  useEffect(() => {
-    if (loading || localMode || member.id === "ssr") return;
-    let supabase: ReturnType<typeof getSupabase>;
-    try {
-      supabase = getSupabase();
-    } catch {
-      return;
-    }
-    const channel = supabase.channel(`presence:${tripId}`, {
-      config: { presence: { key: member.id } },
+    const supabase = createClient();
+    const channel = supabase.channel(`presence:${trip.id}`, {
+      config: { presence: { key: profile.id } },
     });
     channel
       .on("presence", { event: "sync" }, () => {
         const state = channel.presenceState<{ name: string; color: string }>();
         setOnline(
-          Object.entries(state).map(([key, metas]) => ({
-            key,
-            name: metas[0]?.name ?? GUEST_NAME,
-            color: metas[0]?.color ?? "#999",
-          })),
+          Object.entries(state).flatMap(([key, [meta]]) =>
+            meta ? [{ key, name: meta.name, color: meta.color }] : [],
+          ),
         );
       })
       .subscribe(async (status) => {
         if (status === "SUBSCRIBED")
-          await channel.track({ name: member.name, color: member.color });
+          await channel.track({ name: profile.name, color: profile.color });
       });
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [tripId, loading, localMode, member.id, member.name, member.color]);
+  }, [trip.id, profile.id, profile.name, profile.color]);
 
   const people = useMemo<Person[]>(() => {
     const list: Person[] = [
       {
-        key: member.id,
-        name: member.name,
-        color: member.color,
+        key: profile.id,
+        name: profile.name,
+        color: profile.color,
         online: true,
         isMe: true,
       },
     ];
     for (const o of online) {
-      if (o.key === member.id) continue;
-      list.push({
-        key: o.key,
-        name: o.name,
-        color: o.color,
-        online: true,
-        isMe: false,
-      });
+      if (o.key === profile.id) continue;
+      list.push({ ...o, online: true, isMe: false });
     }
     const seen = new Set(list.map((p) => p.name.toLowerCase()));
     for (const a of authors) {
@@ -170,22 +95,15 @@ export function TripProvider({
         isMe: false,
       });
     }
-    return list.map((p) =>
-      p.name === GUEST_NAME ? { ...p, name: t("guest") } : p,
-    );
-  }, [member, online, authors, t]);
+    return list;
+  }, [profile, online, authors]);
 
   const value: TripContextValue = {
-    tripId,
-    trip,
-    loading,
-    error,
-    localMode,
-    member,
+    ...access,
+    tripId: trip.id,
     onlineCount: Math.max(1, online.length),
     people,
     setAuthors,
-    enterLocalMode,
   };
 
   return <TripContext.Provider value={value}>{children}</TripContext.Provider>;

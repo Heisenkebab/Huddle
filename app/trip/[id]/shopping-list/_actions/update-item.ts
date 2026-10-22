@@ -1,5 +1,6 @@
 "use server";
 
+import { isValidItemName } from "@/lib/shopping-list";
 import { createClient } from "@/lib/supabase/server";
 import { ActionResult } from "@/types/action-result";
 import {
@@ -16,6 +17,11 @@ export async function updateItem(
   item_id: string,
   updateBody: Partial<ShoppingListItemBody>,
 ): Promise<UpdateItemResult> {
+  // undefined = name unchanged
+  if (updateBody.name !== undefined && !isValidItemName(updateBody.name)) {
+    return { success: false, error: "Invalid item name" };
+  }
+
   try {
     const supabase = await createClient();
     const { data, error } = await supabase

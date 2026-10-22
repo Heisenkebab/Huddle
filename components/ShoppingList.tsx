@@ -1,5 +1,14 @@
 "use client";
 
+import { createItem } from "@/app/trip/[id]/shopping-list/_actions/create-item";
+import {
+  getAllActiveShoppingListItems,
+  type GetActiveItemsResult,
+} from "@/app/trip/[id]/shopping-list/_actions/get-all-active-items";
+import removeShoppingListItem from "@/app/trip/[id]/shopping-list/_actions/remove-item";
+import restoreRemovedShoppingListItem from "@/app/trip/[id]/shopping-list/_actions/restore-removed-item";
+import { setShoppingListItemBought } from "@/app/trip/[id]/shopping-list/_actions/set-item-bought";
+import { updateItem } from "@/app/trip/[id]/shopping-list/_actions/update-item";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -8,11 +17,16 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { copyText } from "@/lib/clipboard";
-import { demoItems } from "@/lib/demo-items";
 import { formatQuantity } from "@/lib/format";
-import { getSupabase } from "@/lib/supabase";
+import {
+  authorOf,
+  categoryToDb,
+  toShoppingItem,
+  unitToDb,
+} from "@/lib/shopping-list";
+import { createClient } from "@/lib/supabase/client";
 import { showInfoToast, showUndoToast } from "@/lib/toasts";
-import { errorMessage, useTrip } from "@/lib/trip-context";
+import { useTrip } from "@/lib/trip-context";
 import {
   CATEGORY_ORDER,
   type CategoryKey,
@@ -20,36 +34,45 @@ import {
   type ShoppingItemInput,
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
-import { Copy, Pencil, Plus, ShoppingCart, Trash2 } from "lucide-react";
+import type { ShoppingListItemBody } from "@/types/shopping-list";
+import {
+  Copy,
+  Pencil,
+  Plus,
+  RotateCw,
+  ShoppingCart,
+  Trash2,
+} from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import ItemEditor, { type EditorTarget } from "./ItemEditor";
 import PageHeader from "./PageHeader";
 import PersonAvatar from "./PersonAvatar";
 
 const LONG_PRESS_MS = 500;
-const SWIPE_ACTION_PX = 88; // Breite des roten „Löschen“-Bereichs
-const FULL_SWIPE_RATIO = 0.6; // ab diesem Anteil der Zeilenbreite wird direkt gelöscht
+const SWIPE_ACTION_PX = 88; // Width of the red "delete" area
+const FULL_SWIPE_RATIO = 0.6; // swiping past this share of the row width deletes right away
 const COLLAPSE_MS = 220;
+const REFRESH_DEBOUNCE_MS = 200;
 
-function randomId() {
-  // crypto.randomUUID fehlt in unsicheren Kontexten (z. B. http://192.168.x.x am Handy)
-  return typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID()
-    : `local-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-}
-
-export default function ShoppingList() {
+export default function ShoppingList({
+  initial,
+}: {
+  /** Loaded on the server (page.tsx), so the list shows up right away */
+  initial: GetActiveItemsResult;
+}) {
   const trip = useTrip();
-  const { tripId, member, localMode, setAuthors, enterLocalMode } = trip;
+  const { tripId, setAuthors } = trip;
   const t = useTranslations();
   const locale = useLocale();
-  const [items, setItems] = useState<ShoppingItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [items, setItems] = useState<ShoppingItem[]>(() =>
+    initial.success ? initial.data.map(toShoppingItem) : [],
+  );
+  const [loadFailed, setLoadFailed] = useState(!initial.success);
+  const [reloading, setReloading] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
-  // Höchstens eine Zeile ist aufgewischt
+  // At most one row is swiped open
   const [swipedId, setSwipedId] = useState<string | null>(null);
   const [editor, setEditor] = useState<EditorTarget & { key: number }>({
     mode: "add",
@@ -57,226 +80,214 @@ export default function ShoppingList() {
   });
 
   const openEditor = (target: EditorTarget) => {
-    toast.dismiss(); // offene Toasts nicht über dem Popup stehen lassen
+    toast.dismiss(); // don't leave open toasts on top of the popup
     setEditor((prev) => ({ ...target, key: prev.key + 1 }));
     setEditorOpen(true);
   };
 
-  /* ---------- Laden (wartet auf die Reise) ---------- */
-  useEffect(() => {
-    if (trip.loading) return;
-    if (localMode) {
-      setItems((prev) => (prev.length ? prev : demoItems(tripId)));
-      setLoading(false);
-      return;
-    }
-    let cancelled = false;
-    (async () => {
-      try {
-        const { data, error } = await getSupabase()
-          .from("shopping_items")
-          .select("*")
-          .eq("trip_id", tripId)
-          .order("created_at", { ascending: true });
-        if (cancelled) return;
-        if (error) throw error;
-        setItems(data as ShoppingItem[]);
-      } catch (e) {
-        if (!cancelled)
-          enterLocalMode(errorMessage(e, t("shoppingList.loadFailed")));
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tripId, trip.loading, localMode]);
+  /* ---------- Loading ---------- */
+  // Only the newest request's response counts. Optimistic updates bump the
+  // counter too, so an older response can't overwrite them.
+  const latestRequest = useRef(0);
 
-  /* ---------- Echtzeit ---------- */
-  useEffect(() => {
-    if (trip.loading || localMode) return;
-    let supabase: ReturnType<typeof getSupabase>;
-    try {
-      supabase = getSupabase();
-    } catch {
+  const refresh = useCallback(async () => {
+    const request = ++latestRequest.current;
+    const result = await getAllActiveShoppingListItems(tripId);
+    if (request !== latestRequest.current) return;
+    if (!result.success) {
+      setLoadFailed(true);
       return;
     }
+    setLoadFailed(false);
+    setItems(result.data.map(toShoppingItem));
+  }, [tripId]);
+
+  const retryLoad = async () => {
+    setReloading(true);
+    await refresh();
+    setReloading(false);
+  };
+
+  /* ---------- Realtime: refetch when others change the list ---------- */
+  useEffect(() => {
+    const supabase = createClient();
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    // One action often changes both item and history → refetch only once
+    const scheduleRefresh = () => {
+      clearTimeout(timer);
+      timer = setTimeout(refresh, REFRESH_DEBOUNCE_MS);
+    };
     const channel = supabase
-      .channel(`items:${tripId}`)
+      .channel(`shopping-list:${tripId}`)
       .on(
         "postgres_changes",
         {
           event: "*",
           schema: "public",
-          table: "shopping_items",
+          table: "shopping_list_item",
           filter: `trip_id=eq.${tripId}`,
         },
-        (payload: RealtimePostgresChangesPayload<ShoppingItem>) => {
-          setItems((prev) => {
-            if (payload.eventType === "INSERT") {
-              const row = payload.new;
-              return prev.some((i) => i.id === row.id) ? prev : [...prev, row];
-            }
-            if (payload.eventType === "UPDATE") {
-              const row = payload.new;
-              return prev.map((i) => (i.id === row.id ? row : i));
-            }
-            if (payload.eventType === "DELETE") {
-              const id = (payload.old as Partial<ShoppingItem>).id;
-              return prev.filter((i) => i.id !== id);
-            }
-            return prev;
-          });
-        },
+        scheduleRefresh,
+      )
+      // History rows have no trip_id; RLS only delivers rows of the user's own
+      // trips, so changes in another trip at worst cause a needless refetch
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "shopping_list_history" },
+        scheduleRefresh,
       )
       .subscribe();
     return () => {
+      clearTimeout(timer);
       supabase.removeChannel(channel);
     };
-  }, [tripId, trip.loading, localMode]);
+  }, [tripId, refresh]);
 
-  /* Autor:innen an die Sidebar ("Mitreisende") melden */
+  /* Report authors to the sidebar (fellow travellers) */
   useEffect(() => {
     setAuthors(
-      items.map((i) => ({ name: i.added_by_name, color: i.added_by_color })),
+      items.flatMap((i) =>
+        i.added_by_name && i.added_by_color
+          ? [{ name: i.added_by_name, color: i.added_by_color }]
+          : [],
+      ),
     );
   }, [items, setAuthors]);
 
-  /* ---------- Aktionen ---------- */
+  /* ---------- Actions ---------- */
   const togglePurchased = async (item: ShoppingItem, next: boolean) => {
+    latestRequest.current++;
+    const boughtAt = next ? new Date().toISOString() : null;
     setItems((prev) =>
-      prev.map((i) => (i.id === item.id ? { ...i, purchased: next } : i)),
+      prev.map((i) =>
+        i.id === item.id ? { ...i, purchased: next, bought_at: boughtAt } : i,
+      ),
     );
-    if (localMode) return;
-    const { error } = await getSupabase()
-      .from("shopping_items")
-      .update({ purchased: next })
-      .eq("id", item.id);
-    if (error) {
+    const result = await setShoppingListItemBought(tripId, item.id, next);
+    if (!result.success) {
       setItems((prev) =>
         prev.map((i) =>
-          i.id === item.id ? { ...i, purchased: item.purchased } : i,
+          i.id === item.id
+            ? { ...i, purchased: item.purchased, bought_at: item.bought_at }
+            : i,
         ),
       );
       toast.error(t("shoppingList.saveFailed"), {
-        description: error.message,
+        description: result.error,
       });
     }
   };
 
+  // Throw on failure so the editor stays open and shows the message
   const addItem = async (values: ShoppingItemInput) => {
-    if (localMode) {
-      const row: ShoppingItem = {
-        ...values,
-        id: randomId(),
-        trip_id: tripId,
-        description: null,
-        purchased: false,
-        added_by_name: member.name,
-        added_by_color: member.color,
-        created_at: new Date().toISOString(),
-      };
-      setItems((prev) => [...prev, row]);
-      return;
-    }
-    const { data, error } = await getSupabase()
-      .from("shopping_items")
-      .insert({
-        ...values,
-        trip_id: tripId,
-        added_by_name: member.name,
-        added_by_color: member.color,
-      })
-      .select()
-      .single();
-    if (error) throw error;
-    const row = data as ShoppingItem;
-    setItems((prev) =>
-      prev.some((i) => i.id === row.id) ? prev : [...prev, row],
-    );
+    const result = await createItem(tripId, {
+      name: values.name,
+      category: categoryToDb(values.category),
+      unit: unitToDb(values.unit),
+      amount: values.quantity,
+    });
+    if (!result.success) throw new Error(result.error);
+    // Created, or merged into an open entry → refetch
+    await refresh();
   };
 
-  const updateItem = async (id: string, values: ShoppingItemInput) => {
-    if (localMode) {
-      setItems((prev) =>
-        prev.map((i) => (i.id === id ? { ...i, ...values } : i)),
-      );
-      return;
-    }
-    const { data, error } = await getSupabase()
-      .from("shopping_items")
-      .update(values)
-      .eq("id", id)
-      .select()
-      .single();
-    if (error) throw error;
-    const row = data as ShoppingItem;
-    setItems((prev) => prev.map((i) => (i.id === row.id ? row : i)));
+  const editItem = async (item: ShoppingItem, values: ShoppingItemInput) => {
+    // Only send what changed, so an untouched amount isn't rewritten
+    const body: Partial<ShoppingListItemBody> = {};
+    if (values.name !== item.name) body.name = values.name;
+    if (values.category !== item.category)
+      body.category = categoryToDb(values.category);
+    if (values.unit !== item.unit) body.unit = unitToDb(values.unit);
+    if (values.quantity !== item.quantity) body.amount = values.quantity;
+    if (Object.keys(body).length === 0) return;
+
+    const result = await updateItem(tripId, item.id, body);
+    if (!result.success) throw new Error(result.error);
+    await refresh();
   };
 
+  // Bought items can't be removed (DB constraint), so the row only offers
+  // delete for open items
   const deleteItem = async (item: ShoppingItem) => {
+    latestRequest.current++;
     setItems((prev) => prev.filter((i) => i.id !== item.id));
     const restoreLocal = () =>
       setItems((prev) =>
         prev.some((i) => i.id === item.id) ? prev : [...prev, item],
       );
-    const message = t("shoppingList.deleted", { name: item.name });
-    const undoLabel = t("toasts.undo");
 
-    if (localMode) {
-      showUndoToast(message, undoLabel, restoreLocal);
-      return;
-    }
-    const { error } = await getSupabase()
-      .from("shopping_items")
-      .delete()
-      .eq("id", item.id);
-    if (error) {
+    const result = await removeShoppingListItem(tripId, item.id);
+    if (!result.success) {
       restoreLocal();
       toast.error(t("shoppingList.deleteFailed"), {
-        description: error.message,
+        description: result.error,
       });
       return;
     }
-    showUndoToast(message, undoLabel, async () => {
-      const { error: restoreError } = await getSupabase()
-        .from("shopping_items")
-        .insert(item);
-      if (restoreError) {
-        toast.error(t("shoppingList.restoreFailed"), {
-          description: restoreError.message,
-        });
-        return;
-      }
-      restoreLocal();
-    });
+    showUndoToast(
+      t("shoppingList.deleted", { name: item.name }),
+      t("toasts.undo"),
+      async () => {
+        const restored = await restoreRemovedShoppingListItem(tripId, item.id);
+        if (!restored.success) {
+          toast.error(t("shoppingList.restoreFailed"), {
+            description: restored.error,
+          });
+          return;
+        }
+        restoreLocal();
+        await refresh();
+      },
+    );
   };
 
-  /* ---------- Gruppierung nach Kategorie ---------- */
-  const groups = useMemo(() => {
+  /* ---------- Open items by category, bought items in one section below ---------- */
+  // Bought rows would otherwise fill the screen while shopping and push the
+  // open ones out of view
+  const { openGroups, bought } = useMemo(() => {
     const map = new Map<CategoryKey, ShoppingItem[]>();
-    for (const item of [...items].sort((a, b) =>
-      a.created_at.localeCompare(b.created_at),
-    )) {
+    for (const item of items
+      .filter((i) => !i.purchased)
+      .sort((a, b) => a.created_at.localeCompare(b.created_at))) {
       map.set(item.category, [...(map.get(item.category) ?? []), item]);
     }
-    return [...map.entries()].sort(([a], [b]) => rank(a) - rank(b));
+    return {
+      openGroups: [...map.entries()].sort(([a], [b]) => rank(a) - rank(b)),
+      // Newest first: a mis-tap shows up right below the open items
+      bought: items
+        .filter((i) => i.purchased)
+        .sort((a, b) => (b.bought_at ?? "").localeCompare(a.bought_at ?? "")),
+    };
   }, [items]);
 
-  const openCount = items.filter((i) => !i.purchased).length;
+  const openCount = items.length - bought.length;
 
-  /* ---------- WhatsApp-Brücke: offene Artikel als Klartext ---------- */
+  // Each category, then "Bought": same heading + card markup for all
+  const sections = [
+    ...openGroups.map(([category, list]) => ({
+      key: category,
+      title: t(`categories.${category}`),
+      list,
+    })),
+    ...(bought.length > 0
+      ? [
+          {
+            key: "bought",
+            title: t("shoppingList.bought", { count: bought.length }),
+            list: bought,
+          },
+        ]
+      : []),
+  ];
+
+  /* ---------- WhatsApp bridge: open items as plain text ---------- */
   const copyForWhatsApp = async () => {
     const lines = [
       `🛒 *${t("shoppingList.whatsAppTitle")}${trip.trip?.name ? ` – ${trip.trip.name}` : ""}*`,
     ];
-    for (const [category, list] of groups) {
-      const open = list.filter((i) => !i.purchased);
-      if (open.length === 0) continue;
+    for (const [category, list] of openGroups) {
       lines.push("", `*${t(`categories.${category}`)}*`);
-      for (const i of open) {
+      for (const i of list) {
         const qty = formatQuantity(i.quantity, t(`units.${i.unit}`), locale);
         lines.push(`• ${i.name}${qty ? ` (${qty})` : ""}`);
       }
@@ -289,13 +300,11 @@ export default function ShoppingList() {
     );
   };
 
-  const busy = trip.loading || loading;
-
   return (
     <>
       <PageHeader title={t("shoppingList.title")} />
 
-      {/* Laptop: alles in einer Karte (Entwurf LE1) */}
+      {/* Laptop: everything in one card (design LE1) */}
       <section className="lg:rounded-[28px] lg:border lg:bg-card/60 lg:p-6 lg:shadow-[0_1px_2px_rgb(30_28_24/0.04)] dark:lg:bg-[#232323]">
         <div className="mb-5 hidden items-center gap-3 lg:flex">
           <span className="grid size-11 place-items-center rounded-2xl bg-secondary text-primary">
@@ -317,7 +326,6 @@ export default function ShoppingList() {
           </Button>
           <Button
             onClick={() => openEditor({ mode: "add" })}
-            disabled={busy}
             className="rounded-full bg-coral font-semibold text-coral-foreground shadow-[0_6px_16px_rgb(239_107_74/0.3)] hover:bg-coral/90"
           >
             <Plus />
@@ -325,37 +333,51 @@ export default function ShoppingList() {
           </Button>
         </div>
 
-        {busy && (
-          <p className="py-6 text-center text-sm text-muted-foreground">
-            {t("shoppingList.loading")}
-          </p>
+        {loadFailed && (
+          <div className="flex flex-col items-center gap-3 py-6 text-center text-sm text-muted-foreground">
+            <p>{t("shoppingList.loadFailed")}</p>
+            <Button
+              variant="outline"
+              onClick={retryLoad}
+              disabled={reloading}
+              className="rounded-full bg-card"
+            >
+              <RotateCw className={cn(reloading && "animate-spin")} />
+              {t("shoppingList.retry")}
+            </Button>
+          </div>
         )}
 
-        {!busy && items.length === 0 && (
+        {!loadFailed && items.length === 0 && (
           <p className="py-6 text-center text-sm text-muted-foreground">
             {t("shoppingList.empty")}
           </p>
         )}
 
-        {groups.map(([category, list]) => (
-          <div key={category} className="mb-4 last:mb-0">
+        {sections.map((section) => (
+          <div key={section.key} className="mb-4 last:mb-0">
             <h3 className="mb-1.5 ml-1 text-[11px] font-bold tracking-[0.08em] text-foreground/70 uppercase">
-              {t(`categories.${category}`)}
+              {section.title}
             </h3>
             <ul className="divide-y overflow-hidden rounded-[20px] border bg-card dark:shadow-[0_2px_8px_rgb(0_0_0/0.5)]">
-              {list.map((item) => (
+              {section.list.map((item) => (
                 <ItemRow
                   key={item.id}
                   item={item}
-                  swiped={swipedId === item.id}
+                  swiped={swipedId === item.id && !item.purchased}
                   onSwipedChange={(open) =>
                     setSwipedId((prev) =>
                       open ? item.id : prev === item.id ? null : prev,
                     )
                   }
                   onToggle={(next) => togglePurchased(item, next)}
-                  onEdit={() => openEditor({ mode: "edit", item })}
-                  onDelete={() => deleteItem(item)}
+                  // Bought items are read-only: they can only be unticked
+                  onEdit={
+                    item.purchased
+                      ? undefined
+                      : () => openEditor({ mode: "edit", item })
+                  }
+                  onDelete={item.purchased ? undefined : () => deleteItem(item)}
                 />
               ))}
             </ul>
@@ -369,10 +391,9 @@ export default function ShoppingList() {
         </p>
       )}
 
-      {/* Mobil: schwebender Button */}
+      {/* Mobile: floating button */}
       <Button
         size="lg"
-        disabled={busy}
         onClick={() => openEditor({ mode: "add" })}
         className="fixed right-[max(16px,calc(50%-224px))] bottom-[calc(96px+env(safe-area-inset-bottom))] z-10 h-13 rounded-full bg-coral px-6 text-[15px] font-semibold text-coral-foreground shadow-[0_10px_24px_rgb(239_107_74/0.38)] hover:bg-coral/90 lg:hidden"
       >
@@ -386,7 +407,7 @@ export default function ShoppingList() {
         onOpenChange={setEditorOpen}
         target={editor}
         onSave={async (values) => {
-          if (editor.mode === "edit") await updateItem(editor.item.id, values);
+          if (editor.mode === "edit") await editItem(editor.item, values);
           else await addItem(values);
           setEditorOpen(false);
         }}
@@ -408,7 +429,8 @@ function rank(category: CategoryKey) {
   return i === -1 ? CATEGORY_ORDER.length - 1 : i;
 }
 
-/* ---------- Eine Zeile: Antippen = gekauft, Gedrückthalten = Details, nach links wischen = Löschen, Laptop-Hover = Aktionen ---------- */
+/* ---------- One row: tap = bought, long press = details, swipe left = delete, laptop hover = actions.
+   Bought rows have no onEdit/onDelete: only tapping works. ---------- */
 function ItemRow({
   item,
   swiped,
@@ -421,8 +443,10 @@ function ItemRow({
   swiped: boolean;
   onSwipedChange: (open: boolean) => void;
   onToggle: (next: boolean) => void;
-  onEdit: () => void;
-  onDelete: () => void;
+  /** Missing for bought items: no long press, no edit button */
+  onEdit?: () => void;
+  /** Missing for bought items: no swipe, no delete button */
+  onDelete?: () => void;
 }) {
   const t = useTranslations();
   const locale = useLocale();
@@ -437,10 +461,11 @@ function ItemRow({
   const axis = useRef<"x" | "y" | null>(null);
   const longPressed = useRef(false);
   const didSwipe = useRef(false);
-  const [drag, setDrag] = useState<number | null>(null); // Versatz in px während des Wischens
+  const [drag, setDrag] = useState<number | null>(null); // Offset in px while swiping
   const [slideOut, setSlideOut] = useState(false);
   const [removing, setRemoving] = useState(false);
   const checkboxId = `item-${item.id}`;
+  const author = authorOf(item, t("trip.guest"));
 
   useEffect(
     () => () => {
@@ -454,9 +479,9 @@ function ItemRow({
     timer.current = null;
   };
 
-  /* Zeile zusammenklappen, danach erst aus der Liste nehmen */
+  /* Collapse the row first, then remove it from the list */
   const remove = (fullSwipe = false) => {
-    if (removing) return;
+    if (removing || !onDelete) return;
     setSlideOut(fullSwipe);
     setRemoving(true);
     onSwipedChange(false);
@@ -486,7 +511,7 @@ function ItemRow({
       }}
     >
       <div className="relative min-h-0 overflow-hidden">
-        {/* Mobil: roter „Löschen“-Bereich unter der Zeile (Entwurf E2) */}
+        {/* Mobile: red "delete" area under the row (design E2) */}
         {showAction && (
           <div className="absolute inset-0 flex justify-end bg-destructive text-white">
             <button
@@ -511,7 +536,7 @@ function ItemRow({
             transform: `translateX(${typeof offset === "number" ? `${offset}px` : offset})`,
           }}
         >
-          {/* Die ganze Zeile ist das Label der Checkbox → Antippen schaltet "gekauft" um */}
+          {/* The whole row is the checkbox label → tapping toggles "bought" */}
           <label
             htmlFor={checkboxId}
             className="flex touch-pan-y items-center gap-3.5 px-4 py-3 transition-colors select-none [-webkit-touch-callout:none] active:bg-muted/60 lg:hover:bg-muted/60"
@@ -526,7 +551,8 @@ function ItemRow({
                 base: swiped ? -SWIPE_ACTION_PX : 0,
                 width: e.currentTarget.offsetWidth,
               };
-              if (swiped) return; // aufgewischte Zeile: Antippen schiebt nur zurück
+              // Swiped row: tapping only slides it back. Bought row: no long press
+              if (swiped || !onEdit) return;
               timer.current = setTimeout(() => {
                 longPressed.current = true;
                 if (navigator.vibrate) navigator.vibrate(15);
@@ -541,9 +567,11 @@ function ItemRow({
               if (!axis.current) {
                 if (Math.hypot(dx, dy) <= 10) return;
                 clear();
-                // Wischen nur per Finger/Stift; Maus hat am Laptop die Hover-Buttons
+                // Swipe only with finger/pen; a mouse gets the hover buttons on laptop
                 axis.current =
-                  e.pointerType !== "mouse" && Math.abs(dx) > Math.abs(dy)
+                  onDelete &&
+                  e.pointerType !== "mouse" &&
+                  Math.abs(dx) > Math.abs(dy)
                     ? "x"
                     : "y";
                 if (axis.current === "x") {
@@ -565,13 +593,13 @@ function ItemRow({
             }}
             onContextMenu={(e) => e.preventDefault()}
             onClick={(e) => {
-              // Nach Gedrückthalten/Wischen nicht zusätzlich abhaken
+              // Don't also tick the item after a long press or swipe
               if (longPressed.current || didSwipe.current) {
                 e.preventDefault();
                 didSwipe.current = false;
                 return;
               }
-              // Antippen einer aufgewischten Zeile schiebt sie zurück
+              // Tapping a swiped row slides it back
               if (swiped) {
                 e.preventDefault();
                 onSwipedChange(false);
@@ -583,8 +611,8 @@ function ItemRow({
               checked={item.purchased}
               onCheckedChange={(v) => onToggle(v === true)}
               onKeyDown={(e) => {
-                // Tastatur: Shift+Enter öffnet Details
-                if (e.key === "Enter" && e.shiftKey) {
+                // Keyboard: Shift+Enter opens details
+                if (e.key === "Enter" && e.shiftKey && onEdit) {
                   e.preventDefault();
                   onEdit();
                 }
@@ -611,58 +639,64 @@ function ItemRow({
               </span>
             </span>
 
-            {/* Laptop: Bearbeiten/Löschen beim Hovern (Entwurf LE1) */}
-            <span
-              className="hidden items-center gap-1.5 opacity-0 transition-opacity group-hover/row:opacity-100 group-has-[:focus-visible]/row:opacity-100 lg:flex"
-              onPointerDown={(e) => e.stopPropagation()}
-            >
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon-sm"
-                    aria-label={t("shoppingList.edit")}
-                    className="size-8 rounded-full bg-card"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      onEdit();
-                    }}
-                  >
-                    <Pencil className="size-3.5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent sideOffset={6}>
-                  {t("shoppingList.edit")}
-                </TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon-sm"
-                    aria-label={t("shoppingList.delete")}
-                    className="size-8 rounded-full border-destructive/30 bg-destructive/5 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      remove();
-                    }}
-                  >
-                    <Trash2 className="size-3.5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent sideOffset={6}>
-                  {t("shoppingList.delete")}
-                </TooltipContent>
-              </Tooltip>
-            </span>
+            {/* Laptop: edit/delete on hover (design LE1) */}
+            {(onEdit || onDelete) && (
+              <span
+                className="hidden items-center gap-1.5 opacity-0 transition-opacity group-hover/row:opacity-100 group-has-[:focus-visible]/row:opacity-100 lg:flex"
+                onPointerDown={(e) => e.stopPropagation()}
+              >
+                {onEdit && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon-sm"
+                        aria-label={t("shoppingList.edit")}
+                        className="size-8 rounded-full bg-card"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          onEdit();
+                        }}
+                      >
+                        <Pencil className="size-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent sideOffset={6}>
+                      {t("shoppingList.edit")}
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+                {onDelete && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon-sm"
+                        aria-label={t("shoppingList.delete")}
+                        className="size-8 rounded-full border-destructive/30 bg-destructive/5 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          remove();
+                        }}
+                      >
+                        <Trash2 className="size-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent sideOffset={6}>
+                      {t("shoppingList.delete")}
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </span>
+            )}
 
             <PersonAvatar
-              name={item.added_by_name}
-              color={item.added_by_color}
+              name={author.name}
+              color={author.color}
               className={cn(item.purchased && "opacity-50")}
-              title={t("shoppingList.addedBy", { name: item.added_by_name })}
+              title={t("shoppingList.addedBy", { name: author.name })}
             />
           </label>
         </div>

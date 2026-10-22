@@ -1,3 +1,4 @@
+import { getTripAccess } from "@/lib/trip-access";
 import { TripProvider } from "@/lib/trip-context";
 import Sidebar from "@/components/Sidebar";
 import TabBar from "@/components/TabBar";
@@ -10,9 +11,11 @@ export default async function TripLayout({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  // Not signed in or no access to the trip → home page (see getTripAccess)
+  const access = await getTripAccess(id);
 
   return (
-    <TripProvider tripId={id}>
+    <TripProvider access={access}>
       <div className="min-h-dvh bg-background lg:flex">
         <Sidebar />
         <div className="min-w-0 flex-1">
