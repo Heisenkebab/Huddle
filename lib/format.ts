@@ -13,7 +13,7 @@ export function decimalSeparator(locale: string): string {
   );
 }
 
-/** "1,5" oder "1.5" → 1.5; ungültig → null */
+/** "1,5" or "1.5" → 1.5; invalid → null */
 export function parseNumber(text: string): number | null {
   const cleaned = text.trim().replace(",", ".");
   if (cleaned === "") return null;
@@ -48,25 +48,29 @@ export function formatAddedAt(iso: string, locale: string): string {
 const isSmallUnit = (unit: string | null) => unit === "g" || unit === "ml";
 
 /**
- * Erlaubte Nachkommastellen je Einheit, wie is_valid_amount in der DB:
- * kg/l höchstens drei (1,234 kg = 1234 g), g/ml/Stück nur ganze Zahlen.
+ * Allowed decimal places per unit, matching is_valid_amount in the DB:
+ * kg/l at most three (1.234 kg = 1234 g), g/ml/pieces whole numbers only.
  */
 export function maxDecimalsForUnit(unit: string | null): number {
   return unit === "kg" || unit === "l" ? 3 : 0;
 }
 
-/** Größer 0 und nicht mehr Nachkommastellen, als die Einheit erlaubt. */
+/** Maximum quantity in any unit, matching is_valid_amount in the DB. */
+export const MAX_QUANTITY = 10000;
+
+/** Greater than 0, at most MAX_QUANTITY, decimal places depending on unit. */
 export function isValidQuantity(
   quantity: number | null,
   unit: string | null,
 ): boolean {
-  if (quantity === null || quantity <= 0) return false;
+  if (quantity === null || quantity <= 0 || quantity > MAX_QUANTITY)
+    return false;
   return Number(quantity.toFixed(maxDecimalsForUnit(unit))) === quantity;
 }
 
 /**
- * Darf das Mengenfeld diesen (evtl. halb getippten) Text enthalten?
- * Bei g/ml/Stück kein Komma, bei kg/l höchstens drei Nachkommastellen.
+ * May the quantity field contain this (possibly half-typed) text?
+ * No decimal separator for g/ml/pieces, at most three decimals for kg/l.
  */
 export function isQuantityInput(text: string, unit: string | null): boolean {
   const decimals = maxDecimalsForUnit(unit);
@@ -75,8 +79,8 @@ export function isQuantityInput(text: string, unit: string | null): boolean {
 }
 
 /**
- * Menge nach einem Einheitenwechsel: auf g/ml → 100, von g/ml weg → 1,
- * zwischen kg/l bleibt die Menge, auf Stück wird gerundet (1,5 kg → 2 Stück).
+ * Quantity after a unit change: to g/ml → 100, away from g/ml → 1,
+ * between kg/l the quantity stays, to pieces it is rounded (1.5 kg → 2 pieces).
  */
 export function quantityAfterUnitChange(
   quantity: number | null,
@@ -90,7 +94,7 @@ export function quantityAfterUnitChange(
   return quantity;
 }
 
-/** Schrittweite für die +/- Buttons je nach Einheit. */
+/** Step size for the +/- buttons depending on unit. */
 export function stepForUnit(unit: string | null): number {
   switch (unit) {
     case "g":

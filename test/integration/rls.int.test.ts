@@ -26,6 +26,7 @@ import {
   signOut,
   useAccessToken,
 } from "./session";
+import { getHistory } from "./shopping-list";
 
 const admin = createAdminClient();
 
@@ -131,6 +132,30 @@ describe("outsider", () => {
 
     expect(result.success).toBe(false);
   });
+
+  test.each([
+    {
+      fn: "remove_shopping_list_item",
+      args: () => ({ p_item_id: itemId, p_trip_id: tripId }),
+    },
+    {
+      fn: "set_shopping_list_item_bought",
+      args: () => ({ p_trip_id: tripId, p_item_id: itemId, p_bought: true }),
+    },
+    {
+      fn: "restore_removed_shopping_list_item",
+      args: () => ({ p_trip_id: tripId, p_item_id: itemId }),
+    },
+  ] as const)("cannot call $fn on the trip", async ({ fn, args }) => {
+    await signInAs(outsider.email, TEST_PASSWORD);
+
+    const { error } = await createSessionClient().rpc(fn, args());
+
+    expect(error?.code).toBe("42501");
+    expect(await getHistory(itemId)).toEqual([
+      expect.objectContaining({ bought_at: null, removed_at: null }),
+    ]);
+  });
 });
 
 describe("signed-in user", () => {
@@ -187,6 +212,42 @@ describe("guest", () => {
     });
 
     expect(result.success).toBe(true);
+  });
+
+  // Writes only go through the RPCs, which validate the input
+  test("cannot insert items or history directly", async () => {
+    await signInAs(guest.email, TEST_PASSWORD);
+    const client = createSessionClient();
+
+    const item = await client
+      .from("shopping_list_item")
+      .insert({ trip_id: tripId, name: "a".repeat(500), category: "OTHER" });
+    const history = await client
+      .from("shopping_list_history")
+      .insert({ shopping_list_item_id: itemId, unit: Unit.AMOUNT, amount: 1 });
+
+    expect(item.error?.code).toBe("42501");
+    expect(history.error?.code).toBe("42501");
+  });
+
+  test("cannot change or delete history directly", async () => {
+    await signInAs(guest.email, TEST_PASSWORD);
+    const client = createSessionClient();
+
+    const update = await client
+      .from("shopping_list_history")
+      .update({ bought_at: new Date().toISOString() })
+      .eq("shopping_list_item_id", itemId);
+    const del = await client
+      .from("shopping_list_history")
+      .delete()
+      .eq("shopping_list_item_id", itemId);
+
+    expect(update.error?.code).toBe("42501");
+    expect(del.error?.code).toBe("42501");
+    expect(await getHistory(itemId)).toEqual([
+      expect.objectContaining({ bought_at: null }),
+    ]);
   });
 
   test("cannot regenerate the invite link", async () => {

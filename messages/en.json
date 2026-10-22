@@ -88,7 +88,7 @@
     "add": "Add",
     "save": "Save",
     "nameRequired": "Please enter an item.",
-    "quantityInvalid": "Please enter a quantity greater than 0 {decimals, plural, =0 {without decimals} one {with at most # decimal place} other {with at most # decimal places}}.",
+    "quantityInvalid": "Please enter a quantity between 0 and {max, number} {decimals, plural, =0 {without decimals} one {with at most # decimal place} other {with at most # decimal places}}.",
     "saveFailed": "Saving failed: {message}",
     "tryAgain": "Please try again."
   },

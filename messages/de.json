@@ -88,7 +88,7 @@
     "add": "Hinzufügen",
     "save": "Speichern",
     "nameRequired": "Bitte gib einen Artikel ein.",
-    "quantityInvalid": "Bitte gib eine Menge größer 0 {decimals, plural, =0 {ohne Nachkommastellen} one {mit höchstens # Nachkommastelle} other {mit höchstens # Nachkommastellen}} ein.",
+    "quantityInvalid": "Bitte gib eine Menge zwischen 0 und {max, number} {decimals, plural, =0 {ohne Nachkommastellen} one {mit höchstens # Nachkommastelle} other {mit höchstens # Nachkommastellen}} ein.",
     "saveFailed": "Speichern fehlgeschlagen: {message}",
     "tryAgain": "Bitte versuche es erneut."
   },

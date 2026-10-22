@@ -24,6 +24,7 @@ import {
   formatNumber,
   isQuantityInput,
   isValidQuantity,
+  MAX_QUANTITY,
   maxDecimalsForUnit,
   parseNumber,
   quantityAfterUnitChange,
@@ -149,6 +150,7 @@ function ItemForm({
     if (qtyInvalid || qty === null)
       return setError(
         t("itemEditor.quantityInvalid", {
+          max: MAX_QUANTITY,
           decimals: maxDecimalsForUnit(unit),
         }),
       );

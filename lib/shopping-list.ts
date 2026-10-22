@@ -60,13 +60,10 @@ export function authorOf(item: ShoppingItem, guestName: string) {
   };
 }
 
-/** Same limit for the editor input and the server actions */
+/** Same limit in the editor, the server actions and the DB */
 export const ITEM_NAME_MAX_LENGTH = 80;
 
-/**
- * Server actions are public endpoints: check the name there too, the DB only
- * requires it to be non-null. The RPCs trim it, so the limit applies trimmed.
- */
+/** The RPCs trim the name, so the limit applies trimmed */
 export function isValidItemName(name: unknown): name is string {
   if (typeof name !== "string") return false;
   const trimmed = name.trim();

@@ -23,7 +23,10 @@ CREATE TABLE "profile" (
   -- Hex color like '#E0A526'
   "color" text NOT NULL,
   "created_at" timestamptz NOT NULL DEFAULT now(),
-  "updated_at" timestamptz NOT NULL DEFAULT now()
+  "updated_at" timestamptz NOT NULL DEFAULT now(),
+  -- color ends up in CSS, where e.g. url(...) would load in trip mates' browsers
+  CONSTRAINT "profile_color_hex" CHECK ("color" ~ '^#[0-9A-Fa-f]{6}$'),
+  CONSTRAINT "profile_name_length" CHECK (char_length(trim("name")) BETWEEN 1 AND 50)
 );
 
 CREATE TABLE "trip" (
@@ -55,7 +58,10 @@ CREATE TABLE "shopping_list_item" (
   "name" text NOT NULL,
   "trip_id" uuid NOT NULL REFERENCES "trip" ("id"),
   "created_at" timestamptz NOT NULL DEFAULT now(),
-  "updated_at" timestamptz NOT NULL DEFAULT now()
+  "updated_at" timestamptz NOT NULL DEFAULT now(),
+  -- Same limit as ITEM_NAME_MAX_LENGTH in lib/shopping-list.ts
+  CONSTRAINT "shopping_list_item_name_length"
+    CHECK (char_length(trim("name")) BETWEEN 1 AND 80)
 );
 
 -- "Milch" and " milch " count as the same item within a trip
@@ -64,13 +70,14 @@ CREATE UNIQUE INDEX "shopping_list_item_trip_name_idx"
 
 -- Amounts must be positive. Grams, milliliters and pieces are whole numbers;
 -- kilograms and liters have at most 3 decimals, so converting them into grams
--- or milliliters always gives a whole number.
+-- or milliliters always gives a whole number. At most 10000 (MAX_QUANTITY).
 CREATE OR REPLACE FUNCTION is_valid_amount(p_unit "Unit", p_amount numeric)
 RETURNS boolean
 LANGUAGE sql
 IMMUTABLE
 AS $$
   SELECT p_amount > 0
+    AND p_amount <= 10000
     AND p_amount = round(p_amount, 3)
     AND (p_unit NOT IN ('GRAM', 'MILLILITER', 'AMOUNT')
          OR p_amount = trunc(p_amount));

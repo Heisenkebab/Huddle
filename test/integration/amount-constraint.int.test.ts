@@ -46,6 +46,7 @@ describe("shopping_list_history_amount_check", () => {
     { unit: Unit.AMOUNT, amount: 3 },
     { unit: Unit.KILOGRAM, amount: 1.234 },
     { unit: Unit.LITER, amount: 0.5 },
+    { unit: Unit.GRAM, amount: 10000 },
   ])("accepts $amount $unit", async ({ unit, amount }) => {
     const { error } = await insertEntry(unit, amount);
 
@@ -59,6 +60,7 @@ describe("shopping_list_history_amount_check", () => {
     { unit: Unit.KILOGRAM, amount: 1.2345 },
     { unit: Unit.LITER, amount: 0 },
     { unit: Unit.GRAM, amount: -100 },
+    { unit: Unit.AMOUNT, amount: 10001 },
   ])("rejects $amount $unit", async ({ unit, amount }) => {
     const { error } = await insertEntry(unit, amount);
 
@@ -74,6 +76,41 @@ describe("shopping_list_history_amount_check", () => {
       .from("shopping_list_history")
       .update({ unit: Unit.GRAM })
       .eq("shopping_list_item_id", itemId);
+
+    expect(error?.code).toBe("23514");
+  });
+});
+
+describe("shopping_list_item_name_length", () => {
+  let owner: TestUser;
+  let tripId: string;
+
+  beforeEach(async () => {
+    owner = await createTestUser();
+    tripId = await createTestTrip(owner);
+  });
+
+  afterEach(async () => {
+    await cleanUp([tripId], [owner]);
+  });
+
+  async function insertItem(name: string) {
+    return admin
+      .from("shopping_list_item")
+      .insert({ trip_id: tripId, name, category: "OTHER" });
+  }
+
+  test("accepts a name with 80 characters", async () => {
+    const { error } = await insertItem("a".repeat(80));
+
+    expect(error).toBeNull();
+  });
+
+  test.each([
+    { label: "81 characters", name: "a".repeat(81) },
+    { label: "only spaces", name: "   " },
+  ])("rejects a name with $label", async ({ name }) => {
+    const { error } = await insertItem(name);
 
     expect(error?.code).toBe("23514");
   });

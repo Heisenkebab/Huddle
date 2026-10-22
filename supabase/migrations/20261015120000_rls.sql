@@ -144,30 +144,27 @@ CREATE POLICY "guests leave, owner removes guests"
     OR public.is_trip_owner(trip_id)
   );
 
--- shopping_list_item ----------------------------------------------------------
+-- shopping_list_item / shopping_list_history -------------------------------
+-- Read-only: all writes go through the RPCs, which validate the input
 ALTER TABLE public.shopping_list_item ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "members manage the trip's items"
-  ON public.shopping_list_item FOR ALL TO authenticated
-  USING (public.is_trip_member(trip_id))
-  WITH CHECK (public.is_trip_member(trip_id));
+CREATE POLICY "members read the trip's items"
+  ON public.shopping_list_item FOR SELECT TO authenticated
+  USING (public.is_trip_member(trip_id));
 
--- shopping_list_history -------------------------------------------------------
 ALTER TABLE public.shopping_list_history ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "members manage the trip's item history"
-  ON public.shopping_list_history FOR ALL TO authenticated
+CREATE POLICY "members read the trip's item history"
+  ON public.shopping_list_history FOR SELECT TO authenticated
   USING (
     EXISTS (
       SELECT 1 FROM public.shopping_list_item i
       WHERE i.id = shopping_list_item_id
         AND public.is_trip_member(i.trip_id)
     )
-  )
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM public.shopping_list_item i
-      WHERE i.id = shopping_list_item_id
-        AND public.is_trip_member(i.trip_id)
-    )
   );
+
+-- Stays blocked even if a write policy is added by mistake
+REVOKE INSERT, UPDATE, DELETE
+  ON public.shopping_list_item, public.shopping_list_history
+  FROM anon, authenticated;

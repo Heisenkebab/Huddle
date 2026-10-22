@@ -1,37 +1,40 @@
--- Updates an item of a trip and returns its open history entry together with
--- the item's name and category. Only the fields that are not NULL are changed.
--- A new unit or amount is written to the item's open history entry in place.
--- Fails with hint 'invalid_amount' if the resulting amount doesn't fit its
--- unit (see is_valid_amount).
-CREATE OR REPLACE FUNCTION update_shopping_list_item(
+-- Changes only the non-NULL fields; unit/amount go to the open entry.
+-- Hint: 'invalid_amount'.
+CREATE OR REPLACE FUNCTION public.update_shopping_list_item(
   p_trip_id uuid,
   p_item_id uuid,
   p_name text DEFAULT NULL,
-  p_category "Category" DEFAULT NULL,
-  p_unit "Unit" DEFAULT NULL,
+  p_category public."Category" DEFAULT NULL,
+  p_unit public."Unit" DEFAULT NULL,
   p_amount numeric DEFAULT NULL
 )
 RETURNS TABLE (
   id uuid,
   shopping_list_item_id uuid,
-  unit "Unit",
+  unit public."Unit",
   amount numeric,
   name text,
-  category "Category"
+  category public."Category"
 )
 LANGUAGE plpgsql
-SECURITY INVOKER
+SECURITY DEFINER
+SET search_path = ''
 AS $$
 -- The output columns share names with table columns; in queries, mean the
 -- table columns
 #variable_conflict use_column
 DECLARE
   v_history_id uuid;
-  v_unit "Unit";
+  v_unit public."Unit";
   v_amount numeric;
 BEGIN
+  -- RLS doesn't apply in a SECURITY DEFINER function, so check membership here
+  IF NOT public.is_trip_member(p_trip_id) THEN
+    RAISE EXCEPTION 'Not a member of trip %', p_trip_id USING ERRCODE = '42501';
+  END IF;
+
   -- The trip check stops callers from editing an item of another trip
-  UPDATE shopping_list_item
+  UPDATE public.shopping_list_item
   SET name = COALESCE(trim(p_name), name),
       category = COALESCE(p_category, category),
       updated_at = now()
@@ -45,7 +48,7 @@ BEGIN
   IF p_unit IS NOT NULL OR p_amount IS NOT NULL THEN
     -- shopping_list_history_one_open_idx guarantees at most one open entry
     SELECT id, unit, amount INTO v_history_id, v_unit, v_amount
-    FROM shopping_list_history
+    FROM public.shopping_list_history
     WHERE shopping_list_item_id = p_item_id
       AND bought_at IS NULL
       AND removed_at IS NULL
@@ -59,12 +62,12 @@ BEGIN
     -- GRAM) is caught as well
     v_unit := COALESCE(p_unit, v_unit);
     v_amount := COALESCE(p_amount, v_amount);
-    IF NOT is_valid_amount(v_unit, v_amount) THEN
+    IF NOT public.is_valid_amount(v_unit, v_amount) THEN
       RAISE EXCEPTION 'Invalid amount % for unit %', v_amount, v_unit
         USING HINT = 'invalid_amount';
     END IF;
 
-    UPDATE shopping_list_history
+    UPDATE public.shopping_list_history
     SET unit = v_unit,
         amount = v_amount
     WHERE id = v_history_id;
@@ -72,10 +75,17 @@ BEGIN
 
   RETURN QUERY
   SELECT h.id, h.shopping_list_item_id, h.unit, h.amount, i.name, i.category
-  FROM shopping_list_history h
-  JOIN shopping_list_item i ON i.id = h.shopping_list_item_id
+  FROM public.shopping_list_history h
+  JOIN public.shopping_list_item i ON i.id = h.shopping_list_item_id
   WHERE h.shopping_list_item_id = p_item_id
     AND h.bought_at IS NULL
     AND h.removed_at IS NULL;
 END;
 $$;
+
+REVOKE EXECUTE ON FUNCTION public.update_shopping_list_item(
+  uuid, uuid, text, public."Category", public."Unit", numeric
+) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.update_shopping_list_item(
+  uuid, uuid, text, public."Category", public."Unit", numeric
+) TO authenticated;

@@ -225,6 +225,22 @@ describe("createItem", () => {
     ]);
   });
 
+  test("fails and keeps the open entry when the merged amount is too big", async () => {
+    const grams = { ...item, unit: Unit.GRAM, amount: 6000 };
+    const first = await createItem(tripId, grams);
+    if (!first.success) throw new Error(first.error);
+
+    const second = await createItem(tripId, { ...grams, amount: 5000 });
+
+    expect(second).toEqual({
+      success: false,
+      error: "Invalid amount for this unit",
+    });
+    expect(await getHistory(first.data.shopping_list_item_id)).toEqual([
+      expect.objectContaining({ unit: Unit.GRAM, amount: 6000 }),
+    ]);
+  });
+
   test("fails and writes nothing when the trip does not exist", async () => {
     silenceErrorLog();
 
