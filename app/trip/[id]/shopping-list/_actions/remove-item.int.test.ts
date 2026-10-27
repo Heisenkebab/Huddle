@@ -1,4 +1,3 @@
-import { createAdminClient } from "@/test/integration/admin-client";
 import { silenceErrorLog } from "@/test/integration/console";
 import {
   cleanUp,
@@ -8,52 +7,12 @@ import {
   TestUser,
 } from "@/test/integration/fixtures";
 import { signInAs, signOut } from "@/test/integration/session";
-import { Category, Unit } from "@/types/shopping-list";
-import { randomUUID } from "node:crypto";
+import { addEntry, getEntry, seedItem } from "@/test/integration/shopping-list";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import removeShoppingListItem from "./remove-item";
 
-const admin = createAdminClient();
-
 const BOUGHT_AT = "2026-07-02T10:00:00+00:00";
 const REMOVED_AT = "2026-07-02T10:00:00+00:00";
-
-async function seedItem(tripId: string) {
-  const id = randomUUID();
-  const { error } = await admin
-    .from("shopping_list_item")
-    .insert({ id, trip_id: tripId, name: "Milk", category: Category.CHILLED });
-  if (error) throw error;
-  return id;
-}
-
-async function addEntry(
-  itemId: string,
-  state: { bought_at?: string; removed_at?: string } = {},
-) {
-  const { data, error } = await admin
-    .from("shopping_list_history")
-    .insert({
-      shopping_list_item_id: itemId,
-      unit: Unit.LITER,
-      amount: 1,
-      ...state,
-    })
-    .select("id")
-    .single();
-  if (error) throw error;
-  return data.id;
-}
-
-async function getEntry(entryId: string) {
-  const { data, error } = await admin
-    .from("shopping_list_history")
-    .select("bought_at, removed_at")
-    .eq("id", entryId)
-    .single();
-  if (error) throw error;
-  return data;
-}
 
 describe("removeShoppingListItem", () => {
   let owner: TestUser;

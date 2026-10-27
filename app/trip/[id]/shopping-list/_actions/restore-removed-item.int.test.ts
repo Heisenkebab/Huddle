@@ -1,4 +1,3 @@
-import { createAdminClient } from "@/test/integration/admin-client";
 import {
   cleanUp,
   createTestTrip,
@@ -8,55 +7,12 @@ import {
 } from "@/test/integration/fixtures";
 import { silenceErrorLog } from "@/test/integration/console";
 import { signInAs, signOut } from "@/test/integration/session";
-import { Category, Unit } from "@/types/shopping-list";
+import { addEntry, getEntry, seedItem } from "@/test/integration/shopping-list";
 import { randomUUID } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import restoreRemovedShoppingListItem from "./restore-removed-item";
 
-const admin = createAdminClient();
-
 const REMOVED_AT = "2026-07-04T10:00:00+00:00";
-
-async function seedItem(tripId: string) {
-  const id = randomUUID();
-  const { error } = await admin
-    .from("shopping_list_item")
-    .insert({ id, trip_id: tripId, name: "Milk", category: Category.CHILLED });
-  if (error) throw error;
-  return id;
-}
-
-// created_at is set explicitly, so which entry is the latest one doesn't
-// depend on rows inserted within the same millisecond
-async function addEntry(
-  itemId: string,
-  createdAt: string,
-  state: { bought_at?: string; removed_at?: string } = {},
-) {
-  const { data, error } = await admin
-    .from("shopping_list_history")
-    .insert({
-      shopping_list_item_id: itemId,
-      unit: Unit.LITER,
-      amount: 1,
-      created_at: createdAt,
-      ...state,
-    })
-    .select("id")
-    .single();
-  if (error) throw error;
-  return data.id;
-}
-
-async function getEntry(entryId: string) {
-  const { data, error } = await admin
-    .from("shopping_list_history")
-    .select("bought_at, removed_at, updated_at, updated_by")
-    .eq("id", entryId)
-    .single();
-  if (error) throw error;
-  return data;
-}
 
 describe("restoreShoppingListItem", () => {
   let owner: TestUser;
@@ -83,7 +39,8 @@ describe("restoreShoppingListItem", () => {
   });
 
   test("restores the removed entry and records who changed it", async () => {
-    const entryId = await addEntry(itemId, "2026-07-01T10:00:00Z", {
+    const entryId = await addEntry(itemId, {
+      created_at: "2026-07-01T10:00:00Z",
       removed_at: REMOVED_AT,
     });
     const before = await getEntry(entryId);
@@ -101,10 +58,12 @@ describe("restoreShoppingListItem", () => {
   });
 
   test("restores only the latest entry of the item", async () => {
-    const olderId = await addEntry(itemId, "2026-07-01T10:00:00Z", {
+    const olderId = await addEntry(itemId, {
+      created_at: "2026-07-01T10:00:00Z",
       removed_at: "2026-07-02T10:00:00Z",
     });
-    const latestId = await addEntry(itemId, "2026-07-03T10:00:00Z", {
+    const latestId = await addEntry(itemId, {
+      created_at: "2026-07-03T10:00:00Z",
       removed_at: REMOVED_AT,
     });
 
@@ -117,10 +76,13 @@ describe("restoreShoppingListItem", () => {
 
   test("fails and changes nothing when the latest entry was not removed", async () => {
     silenceErrorLog();
-    const removedId = await addEntry(itemId, "2026-07-01T10:00:00Z", {
+    const removedId = await addEntry(itemId, {
+      created_at: "2026-07-01T10:00:00Z",
       removed_at: "2026-07-02T10:00:00Z",
     });
-    const openId = await addEntry(itemId, "2026-07-03T10:00:00Z");
+    const openId = await addEntry(itemId, {
+      created_at: "2026-07-03T10:00:00Z",
+    });
 
     const result = await restoreRemovedShoppingListItem(tripId, itemId);
 
@@ -147,7 +109,8 @@ describe("restoreShoppingListItem", () => {
 
   test("fails and changes nothing when the item belongs to another trip", async () => {
     silenceErrorLog();
-    const entryId = await addEntry(itemId, "2026-07-01T10:00:00Z", {
+    const entryId = await addEntry(itemId, {
+      created_at: "2026-07-01T10:00:00Z",
       removed_at: REMOVED_AT,
     });
     const otherTripId = await createTestTrip(owner);
@@ -165,7 +128,8 @@ describe("restoreShoppingListItem", () => {
     const guestTripId = await createTestTrip(owner, [guest]);
     tripIds.push(guestTripId);
     const guestItemId = await seedItem(guestTripId);
-    const entryId = await addEntry(guestItemId, "2026-07-01T10:00:00Z", {
+    const entryId = await addEntry(guestItemId, {
+      created_at: "2026-07-01T10:00:00Z",
       removed_at: REMOVED_AT,
     });
     await signInAs(guest.email, TEST_PASSWORD);
@@ -183,7 +147,8 @@ describe("restoreShoppingListItem", () => {
 
   test("fails and changes nothing for a user outside the trip", async () => {
     silenceErrorLog();
-    const entryId = await addEntry(itemId, "2026-07-01T10:00:00Z", {
+    const entryId = await addEntry(itemId, {
+      created_at: "2026-07-01T10:00:00Z",
       removed_at: REMOVED_AT,
     });
     const stranger = await createTestUser("Stranger");
@@ -198,7 +163,8 @@ describe("restoreShoppingListItem", () => {
 
   test("fails and changes nothing for anonymous callers", async () => {
     silenceErrorLog();
-    const entryId = await addEntry(itemId, "2026-07-01T10:00:00Z", {
+    const entryId = await addEntry(itemId, {
+      created_at: "2026-07-01T10:00:00Z",
       removed_at: REMOVED_AT,
     });
     signOut();
