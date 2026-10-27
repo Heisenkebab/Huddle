@@ -91,11 +91,21 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
+      # The app needs a Supabase backend; use a throwaway local stack like the integration job
+      - name: Start local Supabase
+        run: npx supabase start -x studio,imgproxy,storage-api,mailpit,realtime,edge-runtime,logflare,vector,supavisor
+
+      # NEXT_PUBLIC_* vars are inlined by `next build`, so export them before building
+      - name: Export Supabase env
+        run: |
+          npx supabase status -o env | sed -n \
+            -e 's/^API_URL="\(.*\)"$/NEXT_PUBLIC_SUPABASE_URL=\1/p' \
+            -e 's/^PUBLISHABLE_KEY="\(.*\)"$/NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=\1/p' \
+            -e 's/^ANON_KEY="\(.*\)"$/NEXT_PUBLIC_SUPABASE_ANON_KEY=\1/p' \
+            >> "$GITHUB_ENV"
+
       - name: Build
         run: npm run build
-        # Add any env vars your build needs (as GitHub secrets), e.g.:
-        # env:
-        #   DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       # Playwright starts `npm run start` itself via `webServer` in playwright.config.ts
       - name: Run Playwright
