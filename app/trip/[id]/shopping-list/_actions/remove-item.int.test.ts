@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/test/integration/admin-client";
+import { silenceErrorLog } from "@/test/integration/console";
 import {
   cleanUp,
   createTestTrip,
@@ -89,6 +90,7 @@ describe("removeShoppingListItem", () => {
   });
 
   test("fails and changes nothing when itemId is null", async () => {
+    silenceErrorLog();
     const entryId = await addEntry(itemId);
 
     const result = await removeShoppingListItem(
@@ -101,6 +103,7 @@ describe("removeShoppingListItem", () => {
   });
 
   test("fails and changes nothing when tripId is null", async () => {
+    silenceErrorLog();
     const entryId = await addEntry(itemId);
 
     const result = await removeShoppingListItem(
@@ -113,6 +116,7 @@ describe("removeShoppingListItem", () => {
   });
 
   test("fails and keeps the date when the entry is already removed", async () => {
+    silenceErrorLog();
     const entryId = await addEntry(itemId, { removed_at: REMOVED_AT });
 
     const result = await removeShoppingListItem(tripId, itemId);
@@ -124,6 +128,7 @@ describe("removeShoppingListItem", () => {
   });
 
   test("fails and changes nothing when the entry is already bought", async () => {
+    silenceErrorLog();
     const entryId = await addEntry(itemId, { bought_at: BOUGHT_AT });
 
     const result = await removeShoppingListItem(tripId, itemId);
@@ -135,6 +140,7 @@ describe("removeShoppingListItem", () => {
   });
 
   test("fails and changes nothing for a user outside the trip", async () => {
+    silenceErrorLog();
     const entryId = await addEntry(itemId);
     const stranger = await createTestUser("Stranger");
     users.push(stranger);
@@ -147,6 +153,7 @@ describe("removeShoppingListItem", () => {
   });
 
   test("fails and changes nothing when the item belongs to another trip", async () => {
+    silenceErrorLog();
     const entryId = await addEntry(itemId);
     const otherTripId = await createTestTrip(owner);
     tripIds.push(otherTripId);

@@ -6,6 +6,7 @@ import {
   TEST_PASSWORD,
   TestUser,
 } from "@/test/integration/fixtures";
+import { silenceErrorLog } from "@/test/integration/console";
 import { signInAs, signOut } from "@/test/integration/session";
 import { Category, Unit } from "@/types/shopping-list";
 import { randomUUID } from "node:crypto";
@@ -15,11 +16,6 @@ import { setShoppingListItemBought } from "./set-item-bought";
 const admin = createAdminClient();
 
 const BOUGHT_AT = "2026-07-02T10:00:00+00:00";
-
-// Expected failures log through console.error; silence only those tests
-function silenceErrorLog() {
-  vi.spyOn(console, "error").mockImplementation(() => {});
-}
 
 async function seedItem(tripId: string) {
   const id = randomUUID();

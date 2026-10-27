@@ -6,6 +6,7 @@ import {
   TEST_PASSWORD,
   TestUser,
 } from "@/test/integration/fixtures";
+import { silenceErrorLog } from "@/test/integration/console";
 import { signInAs, signOut } from "@/test/integration/session";
 import { getHistory } from "@/test/integration/shopping-list";
 import { Category, ShoppingListItemBody, Unit } from "@/types/shopping-list";
@@ -21,11 +22,6 @@ const item: ShoppingListItemBody = {
   unit: Unit.LITER,
   amount: 2,
 };
-
-// Expected failures log through console.error; silence only those tests
-function silenceErrorLog() {
-  vi.spyOn(console, "error").mockImplementation(() => {});
-}
 
 async function seedItem(
   tripId: string,
