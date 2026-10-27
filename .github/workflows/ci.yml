@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
   pull_request:
 
 # Least privilege: jobs only need to read the code
@@ -30,6 +30,7 @@ jobs:
 
       - run: npm ci
 
+      # Same as running `npm run check` locally
       - name: Lint
         run: npm run lint
 
@@ -37,10 +38,32 @@ jobs:
         run: npm run format:check
 
       - name: Typecheck
-        run: npx next typegen && npx tsc --noEmit
+        run: npm run typecheck
 
       - name: Vitest
         run: npx vitest run
+
+  # Server actions against a throwaway local Supabase, with all migrations applied
+  integration:
+    name: DB integration tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - run: npm ci
+
+      # Uses the Supabase CLI from devDependencies; only starts the services the tests need
+      - name: Start local Supabase
+        run: npx supabase start -x studio,imgproxy,storage-api,mailpit,realtime,edge-runtime,logflare,vector,supavisor
+
+      - name: Integration tests
+        run: npm run test:integration
 
   # Build the app and run Playwright against the production build
   e2e:
@@ -69,15 +92,25 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
+      # The app needs a Supabase backend; use a throwaway local stack like the integration job
+      - name: Start local Supabase
+        run: npx supabase start -x studio,imgproxy,storage-api,mailpit,realtime,edge-runtime,logflare,vector,supavisor
+
+      # NEXT_PUBLIC_* vars are inlined by `next build`, so export them before building
+      - name: Export Supabase env
+        run: |
+          npx supabase status -o env | sed -n \
+            -e 's/^API_URL="\(.*\)"$/NEXT_PUBLIC_SUPABASE_URL=\1/p' \
+            -e 's/^PUBLISHABLE_KEY="\(.*\)"$/NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=\1/p' \
+            -e 's/^ANON_KEY="\(.*\)"$/NEXT_PUBLIC_SUPABASE_ANON_KEY=\1/p' \
+            >> "$GITHUB_ENV"
+
       - name: Build
         run: npm run build
-        # Add any env vars your build needs (as GitHub secrets), e.g.:
-        # env:
-        #   DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       # Playwright starts `npm run start` itself via `webServer` in playwright.config.ts
       - name: Run Playwright
-        run: npx playwright test
+        run: npm run test:e2e
         env:
           CI: true
 

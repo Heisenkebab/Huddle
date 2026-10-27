@@ -1,65 +1,95 @@
 Table trip {
-  id uuid [pk]
-  invite_link String [unique]
-  owner_id uuid [ref: > profile.id]
-
+  id uuid [pk, default: `gen_random_uuid()`]
+  owner_id uuid [not null, ref: > profile.id]
+  name text [not null]
+  start_date timestamptz [not null]
+  end_date timestamptz [not null]
 }
 
+Table trip_invite {
+  id uuid [pk, default: `gen_random_uuid()`]
+  trip_id uuid [not null, ref: > trip.id]
+  invite_id uuid [not null, unique]
+  created_at timestamptz [not null, default: `now()`]
+  ending_at timestamptz [not null, default: `now() + interval '7 day'`]
+}
+
+
 Table profile {
-  user_id uuid [pk, ref: ?- user.id] 
-  id uuid [pk]
-  name String
-  color int
-  emoji String
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null, unique, ref: - auth.users.id, note: "ON DELETE CASCADE"]
+  name text [not null]
+  color text [not null]
+  emoji text
+  image_url text
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
 }
 
 Table guest_trip {
-  profile_id uuid [ref: > profile.id]
-  trip_id uuid [ref: > trip.id]
+  id uuid [pk, default: `gen_random_uuid()`]
+  profile_id uuid [not null, ref: > profile.id]
+  trip_id uuid [not null, ref: > trip.id]
+
+  indexes {
+    (profile_id, trip_id) [unique]
+  }
 }
 
-Table grocery_list_history {
-  trip_id uuid [pk, ref: > trip.id]
-  valid_from datetime [pk]
-  grocery_list_item_id uuid [pk, ref: > grocery_list_item.id]
-  bought_at datetime
-  removed_at datetime
-  unit Unit
-  amount Decimal
+Table shopping_list_history {
+  id uuid [pk, default: `gen_random_uuid()`]
+  created_at timestamptz [not null, default: `now()`]
+  shopping_list_item_id uuid [not null, ref: > shopping_list_item.id]
+  bought_at timestamptz
+  removed_at timestamptz
+  unit Unit [not null]
+  amount numeric [not null]
+  updated_at timestamptz [not null, default: `now()`]
+  updated_by uuid [ref: > profile.id, note: "ON DELETE SET NULL"]
+  created_by uuid [ref: > profile.id, note: "ON DELETE SET NULL"]
+  indexes {
+    shopping_list_item_id [unique, note: "WHERE bought_at IS NULL AND removed_at IS NULL"]
+  }
 }
 
-Table grocery_list_item {
-  id uuid [pk]
-  category Category
-  name String
+Table shopping_list_item {
+  id uuid [pk, default: `gen_random_uuid()`]
+  category Category [not null]
+  name text [not null]
+  trip_id uuid [not null, ref: > trip.id]
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    // "Milch" and " milch " count as the same item within a trip
+    (trip_id, `lower(trim(name))`) [unique, name: "shopping_list_item_trip_name_idx"]
+  }
 }
 
 Enum Category {
-  FOOOD
-  DRINK
-  DIARY
+  PRODUCE
+  CHILLED
+  FROZEN
+  BAKERY
+  PANTRY
+  SNACKS
+  MEAT
+  DRINKS
+  ALCOHOL
+  HOUSEHOLD
+  TOILETRIES
   OTHER
 }
 
 Enum Unit {
-  KILO_GRAMM
-  GRAMM
+  KILOGRAM
+  GRAM
   LITER
+  MILLILITER
   AMOUNT
 }
 
-Table user {
-  id uuid [pk, not null]
-  image_url String
-}
-
-Table bill {
+// Managed by Supabase Auth, not created by our migrations
+Table auth.users {
   id uuid [pk]
-  image_url String
-  bills uuid [ref: > bills.id]
-}
-
-Table bills {
-  id uuid [pk]
-  
 }
