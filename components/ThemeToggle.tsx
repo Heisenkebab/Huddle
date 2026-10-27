@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { useTheme } from "next-themes";
 import { useTranslations } from "next-intl";
 import { Monitor, Moon, Sun } from "lucide-react";
@@ -112,7 +112,13 @@ export function ThemeSegmented({ className }: { className?: string }) {
 
 /** Theme ist erst im Browser bekannt → bis dahin neutral rendern (kein Hydration-Mismatch). */
 function useMounted() {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  return mounted;
+  return useSyncExternalStore(
+    subscribeNoop,
+    () => true,
+    () => false,
+  );
+}
+
+function subscribeNoop() {
+  return () => {};
 }
