@@ -30,6 +30,7 @@ jobs:
 
       - run: npm ci
 
+      # Same as running `npm run check` locally
       - name: Lint
         run: npm run lint
 
@@ -37,7 +38,7 @@ jobs:
         run: npm run format:check
 
       - name: Typecheck
-        run: npx next typegen && npx tsc --noEmit
+        run: npm run typecheck
 
       - name: Vitest
         run: npx vitest run
@@ -109,7 +110,7 @@ jobs:
 
       # Playwright starts `npm run start` itself via `webServer` in playwright.config.ts
       - name: Run Playwright
-        run: npx playwright test
+        run: npm run test:e2e
         env:
           CI: true
 
