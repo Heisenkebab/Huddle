@@ -98,9 +98,15 @@
   "categories": {
     "produce": "Fruit & vegetables",
     "chilled": "Chilled",
+    "frozen": "Frozen",
     "bakery": "Bakery",
+    "pantry": "Pantry",
+    "snacks": "Snacks & sweets",
+    "meat": "Meat & fish",
     "drinks": "Drinks",
-    "bbq": "BBQ",
+    "alcohol": "Alcohol",
+    "household": "Household",
+    "toiletries": "Toiletries",
     "other": "Other"
   },
   "units": {

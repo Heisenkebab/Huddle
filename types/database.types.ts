@@ -205,7 +205,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "Category": "PRODUCE"|"CHILLED"|"BAKERY"|"DRINKS"|"BBQ"|"OTHER","Unit": "KILOGRAM"|"GRAM"|"LITER"|"MILLILITER"|"AMOUNT"
+            "Category": "PRODUCE"|"CHILLED"|"FROZEN"|"BAKERY"|"PANTRY"|"SNACKS"|"MEAT"|"DRINKS"|"ALCOHOL"|"HOUSEHOLD"|"TOILETRIES"|"OTHER","Unit": "KILOGRAM"|"GRAM"|"LITER"|"MILLILITER"|"AMOUNT"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -325,7 +325,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "Category": ["PRODUCE", "CHILLED", "BAKERY", "DRINKS", "BBQ", "OTHER"],"Unit": ["KILOGRAM", "GRAM", "LITER", "MILLILITER", "AMOUNT"]
+            "Category": ["PRODUCE", "CHILLED", "FROZEN", "BAKERY", "PANTRY", "SNACKS", "MEAT", "DRINKS", "ALCOHOL", "HOUSEHOLD", "TOILETRIES", "OTHER"],"Unit": ["KILOGRAM", "GRAM", "LITER", "MILLILITER", "AMOUNT"]
           }
         }
 } as const

@@ -98,9 +98,15 @@
   "categories": {
     "produce": "Obst & Gemüse",
     "chilled": "Kühlregal",
+    "frozen": "Tiefkühl",
     "bakery": "Backwaren",
+    "pantry": "Vorrat",
+    "snacks": "Snacks & Süßes",
+    "meat": "Fleisch & Fisch",
     "drinks": "Getränke",
-    "bbq": "Grillen",
+    "alcohol": "Alkohol",
+    "household": "Haushalt",
+    "toiletries": "Drogerie",
     "other": "Sonstiges"
   },
   "units": {

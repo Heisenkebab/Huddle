@@ -1,9 +1,15 @@
 CREATE TYPE "Category" AS ENUM (
   'PRODUCE',
   'CHILLED',
+  'FROZEN',
   'BAKERY',
+  'PANTRY',
+  'SNACKS',
+  'MEAT',
   'DRINKS',
-  'BBQ',
+  'ALCOHOL',
+  'HOUSEHOLD',
+  'TOILETRIES',
   'OTHER'
 );
 

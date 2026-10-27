@@ -1,9 +1,15 @@
 export const CATEGORIES = [
   "produce",
   "chilled",
+  "frozen",
   "bakery",
+  "pantry",
+  "snacks",
+  "meat",
   "drinks",
-  "bbq",
+  "alcohol",
+  "household",
+  "toiletries",
   "other",
 ] as const;
 export type CategoryKey = (typeof CATEGORIES)[number];
@@ -11,10 +17,16 @@ export type CategoryKey = (typeof CATEGORIES)[number];
 /** Order of the sections in the list (like in the store). */
 export const CATEGORY_ORDER: CategoryKey[] = [
   "produce",
-  "chilled",
   "bakery",
-  "bbq",
+  "chilled",
+  "meat",
+  "frozen",
+  "pantry",
+  "snacks",
   "drinks",
+  "alcohol",
+  "household",
+  "toiletries",
   "other",
 ];
 

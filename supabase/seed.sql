@@ -82,11 +82,11 @@ insert into public.trip (id, owner_id, name, start_date, end_date) values
 
 insert into public.shopping_list_item (id, trip_id, name, category) values
   ('b0000000-0000-4000-8000-000000000006', '7c1f3a52-9d4e-4b8a-a6f1-2e5d8c0b4a17', 'Tomaten',     'PRODUCE'),
-  ('b0000000-0000-4000-8000-000000000007', '7c1f3a52-9d4e-4b8a-a6f1-2e5d8c0b4a17', 'Würstchen',   'BBQ'),
-  ('b0000000-0000-4000-8000-000000000008', '7c1f3a52-9d4e-4b8a-a6f1-2e5d8c0b4a17', 'Ketchup',     'OTHER'),
-  ('b0000000-0000-4000-8000-000000000009', '7c1f3a52-9d4e-4b8a-a6f1-2e5d8c0b4a17', 'Chips',       'OTHER'),
+  ('b0000000-0000-4000-8000-000000000007', '7c1f3a52-9d4e-4b8a-a6f1-2e5d8c0b4a17', 'Würstchen',   'MEAT'),
+  ('b0000000-0000-4000-8000-000000000008', '7c1f3a52-9d4e-4b8a-a6f1-2e5d8c0b4a17', 'Ketchup',     'PANTRY'),
+  ('b0000000-0000-4000-8000-000000000009', '7c1f3a52-9d4e-4b8a-a6f1-2e5d8c0b4a17', 'Chips',       'SNACKS'),
   ('b0000000-0000-4000-8000-000000000010', '7c1f3a52-9d4e-4b8a-a6f1-2e5d8c0b4a17', 'Käse',        'CHILLED'),
-  ('b0000000-0000-4000-8000-000000000011', '7c1f3a52-9d4e-4b8a-a6f1-2e5d8c0b4a18', 'Sonnencreme', 'OTHER');
+  ('b0000000-0000-4000-8000-000000000011', '7c1f3a52-9d4e-4b8a-a6f1-2e5d8c0b4a18', 'Sonnencreme', 'TOILETRIES');
 
 insert into public.shopping_list_history (shopping_list_item_id, created_at, unit, amount, bought_at, removed_at) values
   -- Tomaten: bought

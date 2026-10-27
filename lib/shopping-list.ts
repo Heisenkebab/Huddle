@@ -22,9 +22,15 @@ const UNIT_TO_DB = Object.fromEntries(
 const CATEGORY_FROM_DB: Record<Category, CategoryKey> = {
   PRODUCE: "produce",
   CHILLED: "chilled",
+  FROZEN: "frozen",
   BAKERY: "bakery",
+  PANTRY: "pantry",
+  SNACKS: "snacks",
+  MEAT: "meat",
   DRINKS: "drinks",
-  BBQ: "bbq",
+  ALCOHOL: "alcohol",
+  HOUSEHOLD: "household",
+  TOILETRIES: "toiletries",
   OTHER: "other",
 };
 
