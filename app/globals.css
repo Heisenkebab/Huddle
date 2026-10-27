@@ -3,7 +3,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Huddle-Theme (shadcn CSS-Variablen) – Farben aus dem Entwurf */
+/* Huddle theme (shadcn CSS variables), colors from the design */
 :root {
   --radius: 1rem;
   --sidebar-width: 296px;
@@ -29,9 +29,9 @@
   --coral-foreground: #ffffff;
 }
 
-/* Dark Mode – warme, dunkle Töne passend zum hellen Theme */
+/* Dark mode: warm, dark tones to match the light theme */
 .dark {
-  /* Graustufen: Hintergrund → Karte → Fläche → Rand → Eingabe, jeweils deutlich abgestuft */
+  /* Gray scale: background → card → surface → border → input, each a clear step apart */
   --background: #171717;
   --card: #2d2d2d;
   --popover: #333333;
@@ -99,7 +99,7 @@
     -webkit-tap-highlight-color: transparent;
   }
 
-  /* Tailwind v4 setzt bei Buttons keinen Hand-Cursor mehr → hier wieder aktivieren */
+  /* Tailwind v4 no longer sets a pointer cursor on buttons → re-enable it here */
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
   [role="radio"]:not(:disabled),
@@ -115,7 +115,7 @@
   }
 }
 
-/* Laptop: Toasts mittig über der Hauptfläche statt über dem ganzen Fenster (Sidebar links abziehen) */
+/* Laptop: center toasts over the main area instead of the whole window (minus the sidebar on the left) */
 @media (min-width: 1024px) {
   [data-sonner-toaster][data-x-position="center"] {
     left: calc(50% + var(--sidebar-width) / 2) !important;

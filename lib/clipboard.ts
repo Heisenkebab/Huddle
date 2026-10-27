@@ -1,4 +1,4 @@
-/** Text kopieren – mit Fallback für unsichere Kontexte (z. B. http://192.168.x.x am Handy). */
+/** Copies text, with a fallback for insecure contexts (e.g. http://192.168.x.x on a phone). */
 export async function copyText(text: string): Promise<boolean> {
   try {
     if (navigator.clipboard && window.isSecureContext) {
@@ -6,7 +6,7 @@ export async function copyText(text: string): Promise<boolean> {
       return true;
     }
   } catch {
-    /* Fallback unten */
+    /* fallback below */
   }
   try {
     const ta = document.createElement("textarea");

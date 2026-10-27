@@ -1,4 +1,4 @@
--- Demo-Daten wie im Entwurf "Mobile / 2a · Einkauf"
+-- Demo data as in the design "Mobile / 2a · Einkauf"
 -- Only runs locally (`supabase start` on a new DB, `supabase db reset`)
 
 -- Supabase Auth accounts. Sign in with e.g. sara@huddle.test / password123

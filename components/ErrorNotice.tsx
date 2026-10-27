@@ -3,7 +3,7 @@ import { useTranslations } from "next-intl";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
-/** Text zum HTTP-Status 418 (RFC 2324). Wird für alle fehlenden/nicht verfügbaren Seiten angezeigt. */
+/** Text for HTTP status 418 (RFC 2324). Shown for all missing/unavailable pages. */
 export const ERROR_CODE = "418";
 export const ERROR_MESSAGE = "I'm a teapot";
 

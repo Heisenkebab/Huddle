@@ -1,7 +1,7 @@
 import { useTranslations } from "next-intl";
 import FeatureUnavailable from "@/components/FeatureUnavailable";
 
-/** Jede unbekannte Seite innerhalb einer Reise, z. B. /trip/<id>/packliste */
+/** Any unknown page inside a trip, e.g. /trip/<id>/packing-list */
 export default function MissingTripPage() {
   const t = useTranslations("errors");
   return (

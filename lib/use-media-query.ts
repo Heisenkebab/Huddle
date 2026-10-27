@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-/** Laptop-Ansicht ab dieser Breite (Tailwind `lg`). */
+/** Laptop layout from this width up (Tailwind `lg`). */
 export const DESKTOP_QUERY = "(min-width: 1024px)";
 
 export function useMediaQuery(query: string): boolean {

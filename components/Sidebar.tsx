@@ -16,7 +16,7 @@ import PersonAvatar from "./PersonAvatar";
 import { LanguageSegmented } from "./LanguageSwitcher";
 import { ThemeSegmented } from "./ThemeToggle";
 
-/** Laptop: Navigation links (Entwurf LE1). Mobil ausgeblendet. */
+/** Laptop: navigation on the left (design LE1). Hidden on mobile. */
 export default function Sidebar() {
   const pathname = usePathname();
   const { tripId, trip, people } = useTrip();

@@ -1,7 +1,7 @@
 import { useTranslations } from "next-intl";
 import ErrorNotice from "@/components/ErrorNotice";
 
-/** Jede unbekannte Seite außerhalb einer Reise, z. B. /irgendwas */
+/** Any unknown page outside a trip, e.g. /something */
 export default function NotFound() {
   const t = useTranslations("errors");
   return (

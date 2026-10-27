@@ -1,7 +1,7 @@
 import ErrorNotice from "./ErrorNotice";
 import PageHeader from "./PageHeader";
 
-/** Seite innerhalb einer Reise, die (noch) nicht verfügbar ist – mit Kopfzeile, Sidebar/Tab-Leiste bleiben. */
+/** Trip page that isn't available (yet), with a header; the sidebar/tab bar stay. */
 export default function FeatureUnavailable({
   title,
   text,

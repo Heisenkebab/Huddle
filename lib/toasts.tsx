@@ -4,11 +4,11 @@ import type { ReactNode } from "react";
 import { toast } from "sonner";
 import { Check, Trash2 } from "lucide-react";
 
-/** Custom-Toasts sind in Sonner nur so breit wie ihr Inhalt → volle Breite, damit die Pille mittig sitzt. */
+/** Sonner sizes custom toasts to their content → full width, so the pill sits centered. */
 const FULL_WIDTH =
   "!w-full max-[601px]:!w-[calc(100%-var(--mobile-offset-left)*2)]";
 
-/** Ganz runde Pille unten mittig – hell im Light Mode, dunkle Karte im Dark Mode. */
+/** Fully rounded pill at the bottom center: light in light mode, dark card in dark mode. */
 function Pill({ icon, children }: { icon: ReactNode; children: ReactNode }) {
   return (
     <div className="flex w-full flex-1 justify-center">

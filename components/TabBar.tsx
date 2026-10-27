@@ -8,7 +8,7 @@ import { tripPath } from "@/lib/supabase";
 import { NAV_ITEMS } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 
-/** Mobil: schwebende Tab-Leiste mit ganz runden Ecken. Ab Laptop-Breite ausgeblendet. */
+/** Mobile: floating tab bar with fully rounded corners. Hidden from laptop width up. */
 export default function TabBar() {
   const pathname = usePathname();
   const { tripId } = useTrip();

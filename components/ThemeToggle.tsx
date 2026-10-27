@@ -18,12 +18,12 @@ const MODES = [
   { value: "dark", Icon: Moon },
 ] as const;
 
-/** Kompakter Umschalter (Handy-Kopfzeile): ein Button, schaltet System → Hell → Dunkel durch. */
+/** Compact toggle (phone header): one button that cycles System → Light → Dark. */
 export function ThemeToggleButton({ className }: { className?: string }) {
   const { theme, setTheme } = useTheme();
   const t = useTranslations("theme");
   const mounted = useMounted();
-  // Vor dem Mounten ist das gespeicherte Theme unbekannt → Server und Browser rendern identisch ("System")
+  // Before mounting, the stored theme is unknown → server and browser render the same ("System")
   const index = mounted
     ? Math.max(
         0,
@@ -57,7 +57,7 @@ export function ThemeToggleButton({ className }: { className?: string }) {
   );
 }
 
-/** Segment-Umschalter (Laptop-Sidebar): System · Hell · Dunkel, mit gleitendem Schalter. */
+/** Segmented toggle (laptop sidebar): System · Light · Dark, with a sliding thumb. */
 export function ThemeSegmented({ className }: { className?: string }) {
   const { theme, setTheme } = useTheme();
   const t = useTranslations("theme");
@@ -78,7 +78,7 @@ export function ThemeSegmented({ className }: { className?: string }) {
         className,
       )}
     >
-      {/* Gleitender Schalter hinter dem aktiven Eintrag */}
+      {/* Sliding thumb behind the active option */}
       <span
         aria-hidden
         className={cn(
@@ -110,7 +110,7 @@ export function ThemeSegmented({ className }: { className?: string }) {
   );
 }
 
-/** Theme ist erst im Browser bekannt → bis dahin neutral rendern (kein Hydration-Mismatch). */
+/** The theme is only known in the browser → render neutral until then (no hydration mismatch). */
 function useMounted() {
   return useSyncExternalStore(
     subscribeNoop,

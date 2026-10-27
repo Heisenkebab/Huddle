@@ -209,7 +209,6 @@ function ItemForm({
           "overflow-y-auto px-5 pb-[calc(20px+env(safe-area-inset-bottom))]",
       )}
     >
-      {/* Header */}
       <div
         className={cn(
           "flex items-start justify-between gap-3",
@@ -247,7 +246,6 @@ function ItemForm({
         </Close>
       </div>
 
-      {/* Item */}
       <Label
         htmlFor="item-name"
         className="mt-4 mb-2 text-[13px] font-semibold"
@@ -319,7 +317,6 @@ function ItemForm({
         {t("itemEditor.decimalsHint")}
       </p>
 
-      {/* Category */}
       <Label className="mt-4 mb-2 text-[13px] font-semibold">
         {t("itemEditor.category")}
       </Label>
@@ -341,7 +338,6 @@ function ItemForm({
 
       {error && <p className="mt-4 text-[13px] text-destructive">{error}</p>}
 
-      {/* Actions */}
       <div className={cn("mt-6 flex gap-2", isDialog && "items-center")}>
         {onDelete && (
           <Button

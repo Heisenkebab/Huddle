@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 
-/** /trip/[id] → /trip/[id]/shopping-list */
 export default async function TripPage({
   params,
 }: {
