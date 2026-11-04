@@ -22,15 +22,6 @@ export function useTrip() {
   return ctx;
 }
 
-/**
- * Trip, own profile and role. The layout already checked sign-in and
- * membership on the server (getTripAccess), so nothing here is null.
- */
-export function useTripAccess(): TripAccess {
-  const { trip, profile, isOwner } = useTrip();
-  return { trip, profile, isOwner };
-}
-
 export function TripProvider({
   access,
   children,
