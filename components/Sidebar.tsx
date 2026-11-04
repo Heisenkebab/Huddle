@@ -34,6 +34,7 @@ export default function Sidebar() {
     .join(" · ");
 
   const copyInvite = async () => {
+    // TODO: change this to inviteId
     const ok = await copyText(`${window.location.origin}/trip/${tripId}`);
     showInfoToast(ok ? t("trip.inviteCopied") : t("trip.copyFailed"));
   };
