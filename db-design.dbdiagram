@@ -10,38 +10,38 @@
       {
         "name": "trip",
         "schemaName": "public",
-        "x": 696,
-        "y": 184
+        "x": 912,
+        "y": 56
       },
       {
         "name": "profile",
         "schemaName": "public",
-        "x": 256,
+        "x": 400,
         "y": 16
       },
       {
         "name": "guest_trip",
         "schemaName": "public",
-        "x": 1112,
-        "y": 712
+        "x": 1432,
+        "y": 560
       },
       {
         "name": "shopping_list_history",
         "schemaName": "public",
-        "x": 1576,
-        "y": 128
+        "x": 1984,
+        "y": 16
       },
       {
         "name": "shopping_list_item",
         "schemaName": "public",
-        "x": 1112,
-        "y": 184
+        "x": 1432,
+        "y": 288
       },
       {
         "name": "trip_invite",
         "schemaName": "public",
-        "x": 1112,
-        "y": 464
+        "x": 1432,
+        "y": 56
       },
       {
         "name": "users",
