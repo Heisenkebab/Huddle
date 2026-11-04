@@ -1,9 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getTranslations } from "next-intl/server";
+
 import AppToaster from "@/components/AppToaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import ThemeProvider from "@/components/ThemeProvider";
+
 import "./globals.css";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -37,7 +38,7 @@ export default async function RootLayout({
       <body>
         <NextIntlClientProvider>
           <ThemeProvider>
-            <TooltipProvider delayDuration={300}>{children}</TooltipProvider>
+            {children}
             <AppToaster />
           </ThemeProvider>
         </NextIntlClientProvider>
