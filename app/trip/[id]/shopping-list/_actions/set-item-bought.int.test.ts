@@ -1,3 +1,6 @@
+import { randomUUID } from "node:crypto";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+
 import { silenceErrorLog } from "@/test/integration/console";
 import {
   cleanUp,
@@ -8,8 +11,7 @@ import {
 } from "@/test/integration/fixtures";
 import { signInAs, signOut } from "@/test/integration/session";
 import { addEntry, getEntry, seedItem } from "@/test/integration/shopping-list";
-import { randomUUID } from "node:crypto";
-import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+
 import { setShoppingListItemBought } from "./set-item-bought";
 
 const BOUGHT_AT = "2026-07-02T10:00:00+00:00";

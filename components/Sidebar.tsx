@@ -1,19 +1,21 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { Link2 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { useTrip } from "@/lib/trip-context";
-import { tripPath } from "@/lib/supabase";
-import { NAV_ITEMS } from "@/lib/nav";
-import { formatTripDates } from "@/lib/format";
-import { copyText } from "@/lib/clipboard";
-import { showInfoToast } from "@/lib/toasts";
-import { cn } from "@/lib/utils";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
 import { Button } from "@/components/ui/button";
-import PersonAvatar from "./PersonAvatar";
+import { copyText } from "@/lib/clipboard";
+import { formatTripDates } from "@/lib/format";
+import { NAV_ITEMS } from "@/lib/nav";
+import { tripPath } from "@/lib/supabase";
+import { showInfoToast } from "@/lib/toasts";
+import { useTrip } from "@/lib/trip-context";
+import { cn } from "@/lib/utils";
+
 import { LanguageSegmented } from "./LanguageSwitcher";
+import PersonAvatar from "./PersonAvatar";
 import { ThemeSegmented } from "./ThemeToggle";
 
 /** Laptop: navigation on the left (design LE1). Hidden on mobile. */

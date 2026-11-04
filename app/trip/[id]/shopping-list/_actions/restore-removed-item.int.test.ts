@@ -1,3 +1,7 @@
+import { randomUUID } from "node:crypto";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+
+import { silenceErrorLog } from "@/test/integration/console";
 import {
   cleanUp,
   createTestTrip,
@@ -5,11 +9,9 @@ import {
   TEST_PASSWORD,
   TestUser,
 } from "@/test/integration/fixtures";
-import { silenceErrorLog } from "@/test/integration/console";
 import { signInAs, signOut } from "@/test/integration/session";
 import { addEntry, getEntry, seedItem } from "@/test/integration/shopping-list";
-import { randomUUID } from "node:crypto";
-import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+
 import restoreRemovedShoppingListItem from "./restore-removed-item";
 
 const REMOVED_AT = "2026-07-04T10:00:00+00:00";

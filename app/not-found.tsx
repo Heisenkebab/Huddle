@@ -1,4 +1,5 @@
 import { useTranslations } from "next-intl";
+
 import ErrorNotice from "@/components/ErrorNotice";
 
 /** Any unknown page outside a trip, e.g. /something */

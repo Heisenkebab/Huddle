@@ -1,3 +1,6 @@
+import { randomUUID } from "node:crypto";
+import { afterEach, beforeEach, describe, expect, test } from "vitest";
+
 import {
   cleanUp,
   createTestTrip,
@@ -11,8 +14,7 @@ import {
   signInAs,
   signOut,
 } from "@/test/integration/session";
-import { randomUUID } from "node:crypto";
-import { afterEach, beforeEach, describe, expect, test } from "vitest";
+
 import { getTripAccess, NO_ACCESS_PATH } from "./trip-access";
 
 // redirect() throws an error that Next recognizes by its digest

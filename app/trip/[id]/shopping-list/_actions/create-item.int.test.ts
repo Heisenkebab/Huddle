@@ -1,4 +1,8 @@
+import { randomUUID } from "node:crypto";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+
 import { createAdminClient } from "@/test/integration/admin-client";
+import { silenceErrorLog } from "@/test/integration/console";
 import {
   cleanUp,
   createTestTrip,
@@ -6,13 +10,10 @@ import {
   TEST_PASSWORD,
   TestUser,
 } from "@/test/integration/fixtures";
-import { silenceErrorLog } from "@/test/integration/console";
 import { signInAs, signOut } from "@/test/integration/session";
-
 import { getHistory } from "@/test/integration/shopping-list";
 import { Category, ShoppingListItemBody, Unit } from "@/types/shopping-list";
-import { randomUUID } from "node:crypto";
-import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+
 import { createItem } from "./create-item";
 
 const admin = createAdminClient();

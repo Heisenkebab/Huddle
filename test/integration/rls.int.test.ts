@@ -1,6 +1,3 @@
-import { createItem } from "@/app/trip/[id]/shopping-list/_actions/create-item";
-import { Database } from "@/types/database.types";
-import { Category, Unit } from "@/types/shopping-list";
 import {
   afterAll,
   afterEach,
@@ -10,6 +7,11 @@ import {
   test,
   vi,
 } from "vitest";
+
+import { createItem } from "@/app/trip/[id]/shopping-list/_actions/create-item";
+import { Database } from "@/types/database.types";
+import { Category, Unit } from "@/types/shopping-list";
+
 import { createAdminClient } from "./admin-client";
 import {
   cleanUp,

@@ -1,8 +1,9 @@
+import { redirect } from "next/navigation";
+import { cache } from "react";
+
 import { isTripId } from "@/lib/supabase";
 import { createClient } from "@/lib/supabase/server";
 import type { Profile, Trip } from "@/lib/types";
-import { redirect } from "next/navigation";
-import { cache } from "react";
 
 /** Where visitors are sent when they aren't signed in or can't open the trip */
 export const NO_ACCESS_PATH = "/";

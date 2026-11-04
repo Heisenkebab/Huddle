@@ -1,5 +1,9 @@
 "use client";
 
+import { Check, Info, Minus, Plus, Tag, Trash2, X } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
+import { useState, type ComponentType, type ReactNode } from "react";
+
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -30,6 +34,7 @@ import {
   quantityAfterUnitChange,
   stepForUnit,
 } from "@/lib/format";
+import { authorOf, ITEM_NAME_MAX_LENGTH } from "@/lib/shopping-list";
 import {
   CATEGORIES,
   UNITS,
@@ -38,12 +43,9 @@ import {
   type ShoppingItemInput,
   type UnitKey,
 } from "@/lib/types";
-import { authorOf, ITEM_NAME_MAX_LENGTH } from "@/lib/shopping-list";
 import { DESKTOP_QUERY, useMediaQuery } from "@/lib/use-media-query";
 import { cn } from "@/lib/utils";
-import { Check, Info, Minus, Plus, Tag, Trash2, X } from "lucide-react";
-import { useLocale, useTranslations } from "next-intl";
-import { useState, type ComponentType, type ReactNode } from "react";
+
 import PersonAvatar from "./PersonAvatar";
 
 export type EditorTarget =

@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+
 import PageHeader from "@/components/PageHeader";
 
 const SKELETON_ROWS = 4;

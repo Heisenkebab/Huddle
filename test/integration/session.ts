@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { inject } from "vitest";
+
 import { Database } from "@/types/database.types";
 
 let accessToken: string | null = null;

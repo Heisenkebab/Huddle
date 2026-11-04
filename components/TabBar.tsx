@@ -1,11 +1,12 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useTranslations } from "next-intl";
-import { useTrip } from "@/lib/trip-context";
-import { tripPath } from "@/lib/supabase";
+
 import { NAV_ITEMS } from "@/lib/nav";
+import { tripPath } from "@/lib/supabase";
+import { useTrip } from "@/lib/trip-context";
 import { cn } from "@/lib/utils";
 
 /** Mobile: floating tab bar with fully rounded corners. Hidden from laptop width up. */

@@ -1,3 +1,5 @@
+import { afterEach, beforeEach, describe, expect, test } from "vitest";
+
 import { createAdminClient } from "@/test/integration/admin-client";
 import {
   cleanUp,
@@ -6,7 +8,6 @@ import {
   TestUser,
 } from "@/test/integration/fixtures";
 import { Unit } from "@/types/shopping-list";
-import { afterEach, beforeEach, describe, expect, test } from "vitest";
 
 // Writes straight to the table with the admin client, so only the
 // constraint is checked and not the RPCs in front of it

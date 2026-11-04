@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
+
 import ShoppingList from "@/components/ShoppingList";
 import { getTripAccess } from "@/lib/trip-access";
+
 import { getAllActiveShoppingListItems } from "./_actions/get-all-active-items";
 
 type Props = { params: Promise<{ id: string }> };

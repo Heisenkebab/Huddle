@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useMemo, useState } from "react";
+
 import type { TripAccess } from "@/lib/trip-access";
 import type { Person } from "@/lib/types";
 

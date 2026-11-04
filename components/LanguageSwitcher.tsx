@@ -1,16 +1,17 @@
 "use client";
 
-import { useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
+import { useTransition } from "react";
+
 import { setLocale } from "@/app/_actions/set-locale";
-import { locales, type Locale } from "@/i18n/config";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { locales, type Locale } from "@/i18n/config";
 import { cn } from "@/lib/utils";
 
 function useSwitchLocale() {

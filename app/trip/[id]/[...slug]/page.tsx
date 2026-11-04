@@ -1,4 +1,5 @@
 import { useTranslations } from "next-intl";
+
 import FeatureUnavailable from "@/components/FeatureUnavailable";
 
 /** Any unknown page inside a trip, e.g. /trip/<id>/packing-list */

@@ -1,8 +1,8 @@
 "use client";
 
+import { Check, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
-import { Check, Trash2 } from "lucide-react";
 
 /** Sonner sizes custom toasts to their content → full width, so the pill sits centered. */
 const FULL_WIDTH =

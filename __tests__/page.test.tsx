@@ -1,5 +1,6 @@
 import { screen } from "@testing-library/react";
 import { expect, test } from "vitest";
+
 import Page from "@/app/page";
 import { renderWithIntl } from "@/test/intl";
 

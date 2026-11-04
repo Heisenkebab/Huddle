@@ -1,7 +1,7 @@
-import { getTripAccess } from "@/lib/trip-access";
-import { TripProvider } from "@/lib/trip-context";
 import Sidebar from "@/components/Sidebar";
 import TabBar from "@/components/TabBar";
+import { getTripAccess } from "@/lib/trip-access";
+import { TripProvider } from "@/lib/trip-context";
 
 export default async function TripLayout({
   children,

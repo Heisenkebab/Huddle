@@ -1,7 +1,8 @@
-import { Database } from "@/types/database.types";
 import { createServerClient } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
+
+import { Database } from "@/types/database.types";
 
 /**
  * Refreshes the Supabase session before a page renders. Server Components

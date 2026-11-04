@@ -1,6 +1,7 @@
 "use client";
 
 import { useTrip } from "@/lib/trip-context";
+
 import { LanguageToggleButton } from "./LanguageSwitcher";
 import { ThemeToggleButton } from "./ThemeToggle";
 

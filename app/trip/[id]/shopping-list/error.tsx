@@ -1,8 +1,10 @@
-"use client"; // Error boundaries must be Client Components
+"use client";
 
+// Error boundaries must be Client Components
 import { RotateCw } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect } from "react";
+
 import PageHeader from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 

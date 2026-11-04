@@ -1,4 +1,5 @@
 import { expect, test } from "vitest";
+
 import de from "@/messages/de.json";
 import en from "@/messages/en.json";
 

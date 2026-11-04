@@ -1,5 +1,17 @@
 "use client";
 
+import {
+  Copy,
+  Pencil,
+  Plus,
+  RotateCw,
+  ShoppingCart,
+  Trash2,
+} from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
+
 import { createItem } from "@/app/trip/[id]/shopping-list/_actions/create-item";
 import {
   getAllActiveShoppingListItems,
@@ -35,17 +47,7 @@ import {
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import type { ShoppingListItemBody } from "@/types/shopping-list";
-import {
-  Copy,
-  Pencil,
-  Plus,
-  RotateCw,
-  ShoppingCart,
-  Trash2,
-} from "lucide-react";
-import { useLocale, useTranslations } from "next-intl";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
+
 import ItemEditor, { type EditorTarget } from "./ItemEditor";
 import PageHeader from "./PageHeader";
 import PersonAvatar from "./PersonAvatar";

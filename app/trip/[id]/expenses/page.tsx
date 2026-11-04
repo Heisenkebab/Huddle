@@ -1,4 +1,5 @@
 import { useTranslations } from "next-intl";
+
 import FeatureUnavailable from "@/components/FeatureUnavailable";
 
 export default function Page() {
