@@ -39,8 +39,9 @@ CREATE TABLE "trip" (
   "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   "owner_id" uuid NOT NULL REFERENCES "profile" ("id"),
   "name" text NOT NULL,
-  "start_date" timestamptz NOT NULL,
-  "end_date" timestamptz NOT NULL
+  "start_date" date NOT NULL,
+  "end_date" date NOT NULL,
+  CHECK ("end_date" >= "start_date")
 );
 
 CREATE TABLE "trip_invite" (

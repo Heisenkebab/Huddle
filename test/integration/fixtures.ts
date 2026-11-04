@@ -9,8 +9,8 @@ export const TEST_PASSWORD = "password123";
 // Required trip columns, so inserts only fail for the reason a test checks
 export const TEST_TRIP = {
   name: "Testreise",
-  start_date: "2026-07-01T00:00:00Z",
-  end_date: "2026-07-08T00:00:00Z",
+  start_date: "2026-07-01",
+  end_date: "2026-07-08",
 };
 
 export type TestUser = { userId: string; profileId: string; email: string };

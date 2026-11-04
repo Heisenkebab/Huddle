@@ -64,9 +64,8 @@ export const getTripAccess = cache(
       trip: {
         id: trip.id,
         name: trip.name,
-        // timestamptz → date only, as formatTripDates expects
-        start_date: trip.start_date.slice(0, 10),
-        end_date: trip.end_date.slice(0, 10),
+        start_date: trip.start_date,
+        end_date: trip.end_date,
       },
       profile: profileResult.data,
       isOwner: trip.owner_id === profileId,

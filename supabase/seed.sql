@@ -41,7 +41,7 @@ insert into public.profile (id, user_id, name, color) values
 
 insert into public.trip (id, owner_id, name, start_date, end_date) values
   ('7c1f3a52-9d4e-4b8a-a6f1-2e5d8c0b4a17', 'a0000000-0000-4000-8000-000000000001',
-   'Gardasee', now() - interval '2 days', now() + interval '5 days');
+   'Gardasee', current_date - 2, current_date + 5);
 
 insert into public.trip_invite (trip_id, invite_id) values
   ('7c1f3a52-9d4e-4b8a-a6f1-2e5d8c0b4a17', 'd0000000-0000-4000-8000-000000000001');
@@ -78,7 +78,7 @@ insert into public.shopping_list_history (shopping_list_item_id, created_at, uni
 --   Sonnencreme gone    (belongs to another trip)
 insert into public.trip (id, owner_id, name, start_date, end_date) values
   ('7c1f3a52-9d4e-4b8a-a6f1-2e5d8c0b4a18', 'a0000000-0000-4000-8000-000000000003',
-   'Wien', now() + interval '20 days', now() + interval '23 days');
+   'Wien', current_date + 20, current_date + 23);
 
 insert into public.shopping_list_item (id, trip_id, name, category) values
   ('b0000000-0000-4000-8000-000000000006', '7c1f3a52-9d4e-4b8a-a6f1-2e5d8c0b4a17', 'Tomaten',     'PRODUCE'),
