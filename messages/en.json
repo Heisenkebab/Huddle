@@ -1,0 +1,119 @@
+{
+  "metadata": {
+    "description": "Shopping, tasks and expenses for your group trip"
+  },
+  "home": {
+    "openTrip": "Open your trip using the invite link."
+  },
+  "nav": {
+    "label": "Main navigation",
+    "shopping-list": "Shopping",
+    "tasks": "Tasks",
+    "board": "Board",
+    "expenses": "Expenses",
+    "invoice": "Settle up"
+  },
+  "theme": {
+    "label": "Appearance",
+    "system": "System",
+    "light": "Light",
+    "dark": "Dark",
+    "current": "Appearance: {current}",
+    "toggle": "Appearance: {current}. Switch to {next}"
+  },
+  "language": {
+    "label": "Language",
+    "de": "Deutsch",
+    "en": "English",
+    "switchTo": "Switch language to {language}"
+  },
+  "errors": {
+    "featureUnavailable": "This feature is currently unavailable.",
+    "pageNotFound": "This page doesn't exist (yet).",
+    "notFoundTitle": "Not found"
+  },
+  "trip": {
+    "fallbackName": "Trip",
+    "people": "{count, plural, one {# person} other {# people}}",
+    "travelers": "Travelers · {count}",
+    "you": "you",
+    "guest": "Guest",
+    "copyInvite": "Copy invite link",
+    "inviteCopied": "Invite link copied",
+    "copyFailed": "Couldn't copy",
+    "notFound": "Trip not found. Please check the invite link.",
+    "loadFailed": "Couldn't load the trip."
+  },
+  "shoppingList": {
+    "title": "Shopping",
+    "heading": "Shopping list",
+    "openCount": "{count} open · Tap = bought",
+    "copyForWhatsApp": "Copy for WhatsApp",
+    "addItem": "Add item",
+    "addItemShort": "Item",
+    "loading": "Loading shopping list …",
+    "empty": "The list is still empty. Add the first item.",
+    "hint": "Tap = bought · Press and hold for details",
+    "loadFailed": "Couldn't load the list.",
+    "retry": "Try again",
+    "saveFailed": "Couldn't save the change.",
+    "deleteFailed": "Couldn't delete the item.",
+    "restoreFailed": "Restoring failed.",
+    "deleted": "“{name}” deleted",
+    "edit": "Edit",
+    "delete": "Delete",
+    "addedBy": "Added by {name}",
+    "whatsAppTitle": "Shopping list",
+    "bought": "Bought · {count}",
+    "allDone": "All done ✅",
+    "copiedForWhatsApp": "List copied for WhatsApp"
+  },
+  "itemEditor": {
+    "addTitle": "Add item",
+    "editTitle": "Edit item",
+    "addDescription": "Add a new item to the shopping list",
+    "addedBy": "Added by {name}",
+    "close": "Close",
+    "name": "Item",
+    "namePlaceholder": "e.g. milk",
+    "quantity": "Quantity",
+    "less": "Less",
+    "more": "More",
+    "unit": "Unit",
+    "decimalsHint": "Decimals only for kg and l (up to 3 places), e.g. 0.5 kg or 1.5 l",
+    "category": "Category",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "saving": "Saving …",
+    "add": "Add",
+    "save": "Save",
+    "nameRequired": "Please enter an item.",
+    "quantityInvalid": "Please enter a quantity between 0 and {max, number} {decimals, plural, =0 {without decimals} one {with at most # decimal place} other {with at most # decimal places}}.",
+    "saveFailed": "Saving failed: {message}",
+    "tryAgain": "Please try again."
+  },
+  "toasts": {
+    "undo": "Undo"
+  },
+  "categories": {
+    "produce": "Fruit & vegetables",
+    "chilled": "Chilled",
+    "frozen": "Frozen",
+    "bakery": "Bakery",
+    "pantry": "Pantry",
+    "snacks": "Snacks & sweets",
+    "meat": "Meat & fish",
+    "drinks": "Drinks",
+    "alcohol": "Alcohol",
+    "household": "Household",
+    "toiletries": "Toiletries",
+    "other": "Other"
+  },
+  "units": {
+    "pcs": "pcs",
+    "kg": "kg",
+    "g": "g",
+    "l": "l",
+    "ml": "ml"
+  }
+}
