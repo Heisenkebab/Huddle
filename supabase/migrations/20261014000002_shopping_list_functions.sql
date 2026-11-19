@@ -3,8 +3,8 @@
 CREATE OR REPLACE FUNCTION public.create_shopping_list_item(
   p_trip_id uuid,
   p_name text,
-  p_category public."Category",
-  p_unit public."Unit",
+  p_category public.category,
+  p_unit public.unit,
   p_amount numeric
 )
 -- Returns the item's columns itself: a PostgREST embed runs in the same
@@ -12,10 +12,10 @@ CREATE OR REPLACE FUNCTION public.create_shopping_list_item(
 RETURNS TABLE (
   id uuid,
   shopping_list_item_id uuid,
-  unit public."Unit",
+  unit public.unit,
   amount numeric,
   name text,
-  category public."Category",
+  category public.category,
   merged boolean
 )
 LANGUAGE plpgsql
@@ -28,7 +28,7 @@ AS $$
 DECLARE
   v_item_id uuid;
   v_history_id uuid;
-  v_open_unit public."Unit";
+  v_open_unit public.unit;
   v_open_amount numeric;
   v_new_amount numeric;
   v_merged boolean := false;
@@ -102,10 +102,10 @@ END;
 $$;
 
 REVOKE EXECUTE ON FUNCTION public.create_shopping_list_item(
-  uuid, text, public."Category", public."Unit", numeric
+  uuid, text, public.category, public.unit, numeric
 ) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.create_shopping_list_item(
-  uuid, text, public."Category", public."Unit", numeric
+  uuid, text, public.category, public.unit, numeric
 ) TO authenticated;
 
 -- Changes only the non-NULL fields; unit/amount go to the open entry.
@@ -114,17 +114,17 @@ CREATE OR REPLACE FUNCTION public.update_shopping_list_item(
   p_trip_id uuid,
   p_item_id uuid,
   p_name text DEFAULT NULL,
-  p_category public."Category" DEFAULT NULL,
-  p_unit public."Unit" DEFAULT NULL,
+  p_category public.category DEFAULT NULL,
+  p_unit public.unit DEFAULT NULL,
   p_amount numeric DEFAULT NULL
 )
 RETURNS TABLE (
   id uuid,
   shopping_list_item_id uuid,
-  unit public."Unit",
+  unit public.unit,
   amount numeric,
   name text,
-  category public."Category"
+  category public.category
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -135,7 +135,7 @@ AS $$
 #variable_conflict use_column
 DECLARE
   v_history_id uuid;
-  v_unit public."Unit";
+  v_unit public.unit;
   v_amount numeric;
 BEGIN
   -- RLS doesn't apply in a SECURITY DEFINER function, so check membership here
@@ -194,10 +194,10 @@ END;
 $$;
 
 REVOKE EXECUTE ON FUNCTION public.update_shopping_list_item(
-  uuid, uuid, text, public."Category", public."Unit", numeric
+  uuid, uuid, text, public.category, public.unit, numeric
 ) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.update_shopping_list_item(
-  uuid, uuid, text, public."Category", public."Unit", numeric
+  uuid, uuid, text, public.category, public.unit, numeric
 ) TO authenticated;
 
 -- Set by the database, so clients can't claim to be someone else.
@@ -315,13 +315,13 @@ RETURNS TABLE (
   id uuid,
   trip_id uuid,
   name text,
-  category public."Category",
+  category public.category,
   created_at timestamp with time zone,
   updated_at timestamp with time zone,
   bought_at timestamp with time zone,
   created_by uuid,
   updated_by uuid,
-  unit public."Unit",
+  unit public.unit,
   amount numeric,
   created_by_name text,
   created_by_color text,
@@ -372,7 +372,7 @@ BEGIN
         update_user.color as updated_by_color
     FROM latest
      -- LEFT JOIN: created_by/updated_by are NULL for seed/service-role rows and deleted profiles
-    LEFT JOIN public.profile created_user ON latest.created_by = created_user.id 
+    LEFT JOIN public.profile created_user ON latest.created_by = created_user.id
     LEFT JOIN public.profile update_user ON latest.updated_by = update_user.id
     WHERE latest.removed_at IS NULL
     AND (latest.bought_at IS NULL OR latest.bought_at > now() - interval '2 days')
