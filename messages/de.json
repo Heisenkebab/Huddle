@@ -46,6 +46,8 @@
   },
   "invite": {
     "invite_invalid": "Dieser Einladungslink ist ungültig oder abgelaufen.",
+    "name_invalid": "Bitte gib einen Namen mit 1 bis 50 Zeichen ein.",
+    "color_invalid": "Bitte wähle eine gültige Farbe.",
     "not_authenticated": "Bitte melde dich an, um der Reise beizutreten."
   },
   "shoppingList": {

@@ -50,6 +50,12 @@ async function guestTripIds(profileId: string) {
   return data.map((row) => row.trip_id);
 }
 
+async function anonymousUserIds() {
+  const { data, error } = await admin.auth.admin.listUsers({ perPage: 1000 });
+  if (error) throw error;
+  return data.users.filter((user) => user.is_anonymous).map((user) => user.id);
+}
+
 const locales = { de, en };
 
 // Errors from the database come back as message keys under "invite", so the
@@ -73,8 +79,27 @@ describe("joinTrip", () => {
   let owner: TestUser;
   let tripId: string;
   let inviteId: string;
+  let anonymousBefore: Set<string>;
   const users: TestUser[] = [];
   const tripIds: string[] = [];
+
+  // Anonymous users joinTrip signed in since beforeEach. Tests don't get their
+  // session back, so they find them through the admin API instead.
+  async function createdAnonymousUserIds() {
+    const tracked = new Set(users.map((user) => user.userId));
+    return (await anonymousUserIds()).filter(
+      (id) => !anonymousBefore.has(id) && !tracked.has(id),
+    );
+  }
+
+  // The one anonymous user joinTrip created, with the profile it got
+  async function createdAnonymousGuest() {
+    const ids = await createdAnonymousUserIds();
+    expect(ids).toHaveLength(1);
+    const profile = await getProfile(ids[0]!);
+    expect(profile).not.toBeNull();
+    return profile!;
+  }
 
   // Anonymous users have no email/profile up front; cleanUp only needs userId
   async function signInAsNewAnonymousUser() {
@@ -84,6 +109,8 @@ describe("joinTrip", () => {
   }
 
   beforeEach(async () => {
+    signOut();
+    anonymousBefore = new Set(await anonymousUserIds());
     owner = await createTestUser();
     users.push(owner);
     tripId = await createTestTrip(owner);
@@ -94,28 +121,49 @@ describe("joinTrip", () => {
   afterEach(async () => {
     vi.restoreAllMocks();
     signOut();
+    const created = await createdAnonymousUserIds();
+    users.push(
+      ...created.map((userId) => ({ userId, profileId: "", email: "" })),
+    );
     await cleanUp(tripIds.splice(0), users.splice(0));
   });
 
-  test("creates a profile for a new user and adds them as a guest", async () => {
-    const userId = await signInAsNewAnonymousUser();
+  test("signs in anonymously when nobody is signed in", async () => {
+    expect(await joinTrip(inviteId, "Guest")).toEqual({
+      success: true,
+      data: { tripId },
+    });
 
+    expect(await createdAnonymousUserIds()).toHaveLength(1);
+  });
+
+  test("creates a profile for the new user and adds them as a guest", async () => {
     expect(await joinTrip(inviteId, "  Guest ", "#123ABC")).toEqual({
       success: true,
       data: { tripId },
     });
 
-    const profile = await getProfile(userId);
+    const profile = await createdAnonymousGuest();
     expect(profile).toMatchObject({ name: "Guest", color: "#123ABC" });
-    expect(await guestTripIds(profile!.id)).toEqual([tripId]);
+    expect(await guestTripIds(profile.id)).toEqual([tripId]);
   });
 
   test("uses a default color when none is picked", async () => {
-    const userId = await signInAsNewAnonymousUser();
-
     await joinTrip(inviteId, "Guest");
 
-    expect((await getProfile(userId))?.color).toMatch(/^#[0-9A-Fa-f]{6}$/);
+    const profile = await createdAnonymousGuest();
+    expect(profile.color).toMatch(/^#[0-9A-Fa-f]{6}$/);
+  });
+
+  test("keeps an already anonymous user instead of creating another", async () => {
+    const userId = await signInAsNewAnonymousUser();
+
+    expect(await joinTrip(inviteId, "Guest")).toMatchObject({ success: true });
+
+    expect(await createdAnonymousUserIds()).toEqual([]);
+    const profile = await getProfile(userId);
+    expect(profile).toMatchObject({ name: "Guest" });
+    expect(await guestTripIds(profile!.id)).toEqual([tripId]);
   });
 
   test("keeps an existing profile's name and color", async () => {
@@ -127,6 +175,7 @@ describe("joinTrip", () => {
       success: true,
     });
 
+    expect(await createdAnonymousUserIds()).toEqual([]);
     expect(await getProfile(guest.userId)).toEqual({
       id: guest.profileId,
       name: "Existing",
@@ -153,11 +202,11 @@ describe("joinTrip", () => {
       success: true,
       data: { tripId },
     });
+    expect(await createdAnonymousUserIds()).toEqual([]);
     expect(await guestTripIds(owner.profileId)).toEqual([]);
   });
 
   test("fails for an expired invite", async () => {
-    await signInAsNewAnonymousUser();
     const expired = await createInvite(
       tripId,
       new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
@@ -167,42 +216,33 @@ describe("joinTrip", () => {
   });
 
   test("fails for an unknown invite id", async () => {
-    const userId = await signInAsNewAnonymousUser();
-
     expectTranslatedError(
       await joinTrip(randomUUID(), "Guest"),
       "invite_invalid",
     );
     // The failed join rolls back, so no profile is left behind
-    expect(await getProfile(userId)).toBeNull();
+    for (const userId of await createdAnonymousUserIds()) {
+      expect(await getProfile(userId)).toBeNull();
+    }
   });
 
-  test("fails when not signed in", async () => {
-    signOut();
-
-    expectTranslatedError(
-      await joinTrip(inviteId, "Guest"),
-      "not_authenticated",
-    );
-  });
-
-  test.each(["", "   ", "x".repeat(51)])(
+  test.each(["", "   ", "x".repeat(51), " " + "x".repeat(50) + " "])(
     "rejects the invalid name %j",
     async (name) => {
-      expect(await joinTrip(inviteId, name)).toEqual({
-        success: false,
-        error: "Invalid name",
-      });
+      expectTranslatedError(await joinTrip(inviteId, name), "name_invalid");
+      // Input is checked before anyone is signed in
+      expect(await createdAnonymousUserIds()).toEqual([]);
     },
   );
 
   test.each(["red", "#FFF", "url(x)"])(
     "rejects the invalid color %j",
     async (color) => {
-      expect(await joinTrip(inviteId, "Guest", color)).toEqual({
-        success: false,
-        error: "color_invalid",
-      });
+      expectTranslatedError(
+        await joinTrip(inviteId, "Guest", color),
+        "color_invalid",
+      );
+      expect(await createdAnonymousUserIds()).toEqual([]);
     },
   );
 });

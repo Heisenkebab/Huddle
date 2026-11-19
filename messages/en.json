@@ -46,6 +46,8 @@
   },
   "invite": {
     "invite_invalid": "This invite link is invalid or has expired.",
+    "name_invalid": "Please enter a name with 1 to 50 characters.",
+    "color_invalid": "Please pick a valid color.",
     "not_authenticated": "Please sign in to join the trip."
   },
   "shoppingList": {
