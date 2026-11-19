@@ -40,6 +40,7 @@ export type Database = {
           profile_id: string;
           trip_id: string;
         };
+        ComputedFields: never;
         Insert: {
           id?: string;
           profile_id: string;
@@ -76,6 +77,7 @@ export type Database = {
           updated_at: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           color: string;
           created_at?: string;
@@ -103,10 +105,11 @@ export type Database = {
           id: string;
           removed_at: string | null;
           shopping_list_item_id: string;
-          unit: Database["public"]["Enums"]["Unit"];
+          unit: Database["public"]["Enums"]["unit"];
           updated_at: string;
           updated_by: string | null;
         };
+        ComputedFields: never;
         Insert: {
           amount: number;
           bought_at?: string | null;
@@ -115,7 +118,7 @@ export type Database = {
           id?: string;
           removed_at?: string | null;
           shopping_list_item_id: string;
-          unit: Database["public"]["Enums"]["Unit"];
+          unit: Database["public"]["Enums"]["unit"];
           updated_at?: string;
           updated_by?: string | null;
         };
@@ -127,7 +130,7 @@ export type Database = {
           id?: string;
           removed_at?: string | null;
           shopping_list_item_id?: string;
-          unit?: Database["public"]["Enums"]["Unit"];
+          unit?: Database["public"]["Enums"]["unit"];
           updated_at?: string;
           updated_by?: string | null;
         };
@@ -157,15 +160,16 @@ export type Database = {
       };
       shopping_list_item: {
         Row: {
-          category: Database["public"]["Enums"]["Category"];
+          category: Database["public"]["Enums"]["category"];
           created_at: string;
           id: string;
           name: string;
           trip_id: string;
           updated_at: string;
         };
+        ComputedFields: never;
         Insert: {
-          category: Database["public"]["Enums"]["Category"];
+          category: Database["public"]["Enums"]["category"];
           created_at?: string;
           id?: string;
           name: string;
@@ -173,7 +177,7 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
-          category?: Database["public"]["Enums"]["Category"];
+          category?: Database["public"]["Enums"]["category"];
           created_at?: string;
           id?: string;
           name?: string;
@@ -198,6 +202,7 @@ export type Database = {
           owner_id: string;
           start_date: string;
         };
+        ComputedFields: never;
         Insert: {
           end_date: string;
           id?: string;
@@ -230,6 +235,7 @@ export type Database = {
           invite_id: string;
           trip_id: string;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           ending_at?: string;
@@ -262,19 +268,19 @@ export type Database = {
       create_shopping_list_item: {
         Args: {
           p_amount: number;
-          p_category: Database["public"]["Enums"]["Category"];
+          p_category: Database["public"]["Enums"]["category"];
           p_name: string;
           p_trip_id: string;
-          p_unit: Database["public"]["Enums"]["Unit"];
+          p_unit: Database["public"]["Enums"]["unit"];
         };
         Returns: {
           amount: number;
-          category: Database["public"]["Enums"]["Category"];
+          category: Database["public"]["Enums"]["category"];
           id: string;
           merged: boolean;
           name: string;
           shopping_list_item_id: string;
-          unit: Database["public"]["Enums"]["Unit"];
+          unit: Database["public"]["Enums"]["unit"];
         }[];
       };
       current_profile_id: { Args: Record<PropertyKey, never>; Returns: string };
@@ -283,7 +289,7 @@ export type Database = {
         Returns: {
           amount: number;
           bought_at: string;
-          category: Database["public"]["Enums"]["Category"];
+          category: Database["public"]["Enums"]["category"];
           created_at: string;
           created_by: string;
           created_by_color: string;
@@ -291,7 +297,7 @@ export type Database = {
           id: string;
           name: string;
           trip_id: string;
-          unit: Database["public"]["Enums"]["Unit"];
+          unit: Database["public"]["Enums"]["unit"];
           updated_at: string;
           updated_by: string;
           updated_by_color: string;
@@ -302,7 +308,7 @@ export type Database = {
       is_trip_member: { Args: { p_trip_id: string }; Returns: boolean };
       is_trip_owner: { Args: { p_trip_id: string }; Returns: boolean };
       is_valid_amount: {
-        Args: { p_amount: number; p_unit: Database["public"]["Enums"]["Unit"] };
+        Args: { p_amount: number; p_unit: Database["public"]["Enums"]["unit"] };
         Returns: boolean;
       };
       remove_shopping_list_item: {
@@ -319,34 +325,34 @@ export type Database = {
       };
       shares_trip_with: { Args: { p_profile_id: string }; Returns: boolean };
       unit_factor: {
-        Args: { p_unit: Database["public"]["Enums"]["Unit"] };
+        Args: { p_unit: Database["public"]["Enums"]["unit"] };
         Returns: number;
       };
       unit_group: {
-        Args: { p_unit: Database["public"]["Enums"]["Unit"] };
+        Args: { p_unit: Database["public"]["Enums"]["unit"] };
         Returns: string;
       };
       update_shopping_list_item: {
         Args: {
           p_amount?: number;
-          p_category?: Database["public"]["Enums"]["Category"];
+          p_category?: Database["public"]["Enums"]["category"];
           p_item_id: string;
           p_name?: string;
           p_trip_id: string;
-          p_unit?: Database["public"]["Enums"]["Unit"];
+          p_unit?: Database["public"]["Enums"]["unit"];
         };
         Returns: {
           amount: number;
-          category: Database["public"]["Enums"]["Category"];
+          category: Database["public"]["Enums"]["category"];
           id: string;
           name: string;
           shopping_list_item_id: string;
-          unit: Database["public"]["Enums"]["Unit"];
+          unit: Database["public"]["Enums"]["unit"];
         }[];
       };
     };
     Enums: {
-      Category:
+      category:
         | "PRODUCE"
         | "CHILLED"
         | "FROZEN"
@@ -359,7 +365,7 @@ export type Database = {
         | "HOUSEHOLD"
         | "TOILETRIES"
         | "OTHER";
-      Unit: "KILOGRAM" | "GRAM" | "LITER" | "MILLILITER" | "AMOUNT";
+      unit: "KILOGRAM" | "GRAM" | "LITER" | "MILLILITER" | "AMOUNT";
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -490,7 +496,7 @@ export const Constants = {
   },
   public: {
     Enums: {
-      Category: [
+      category: [
         "PRODUCE",
         "CHILLED",
         "FROZEN",
@@ -504,7 +510,7 @@ export const Constants = {
         "TOILETRIES",
         "OTHER",
       ],
-      Unit: ["KILOGRAM", "GRAM", "LITER", "MILLILITER", "AMOUNT"],
+      unit: ["KILOGRAM", "GRAM", "LITER", "MILLILITER", "AMOUNT"],
     },
   },
 } as const;

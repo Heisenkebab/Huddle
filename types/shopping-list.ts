@@ -1,13 +1,13 @@
 import { Constants, Database } from "./database.types";
 
-export type Unit = Database["public"]["Enums"]["Unit"];
+export type Unit = Database["public"]["Enums"]["unit"];
 export const Unit = Object.fromEntries(
-  Constants.public.Enums.Unit.map((u) => [u, u]),
+  Constants.public.Enums.unit.map((u) => [u, u]),
 ) as { [K in Unit]: K };
 
-export type Category = Database["public"]["Enums"]["Category"];
+export type Category = Database["public"]["Enums"]["category"];
 export const Category = Object.fromEntries(
-  Constants.public.Enums.Category.map((c) => [c, c]),
+  Constants.public.Enums.category.map((c) => [c, c]),
 ) as { [K in Category]: K };
 
 export interface ShoppingListItemBody {
