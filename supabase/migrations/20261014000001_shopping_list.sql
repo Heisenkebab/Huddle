@@ -1,4 +1,4 @@
-CREATE TYPE "Category" AS ENUM (
+CREATE TYPE category AS ENUM (
   'PRODUCE',
   'CHILLED',
   'FROZEN',
@@ -13,7 +13,7 @@ CREATE TYPE "Category" AS ENUM (
   'OTHER'
 );
 
-CREATE TYPE "Unit" AS ENUM (
+CREATE TYPE unit AS ENUM (
   'KILOGRAM',
   'GRAM',
   'LITER',
@@ -23,7 +23,7 @@ CREATE TYPE "Unit" AS ENUM (
 
 CREATE TABLE "shopping_list_item" (
   "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  "category" "Category" NOT NULL,
+  "category" "category" NOT NULL,
   "name" text NOT NULL,
   "trip_id" uuid NOT NULL REFERENCES "trip" ("id"),
   "created_at" timestamptz NOT NULL DEFAULT now(),
@@ -40,7 +40,7 @@ CREATE UNIQUE INDEX "shopping_list_item_trip_name_idx"
 -- Amounts must be positive. Grams, milliliters and pieces are whole numbers;
 -- kilograms and liters have at most 3 decimals, so converting them into grams
 -- or milliliters always gives a whole number. At most 10000 (MAX_QUANTITY).
-CREATE OR REPLACE FUNCTION public.is_valid_amount(p_unit public."Unit", p_amount numeric)
+CREATE OR REPLACE FUNCTION public.is_valid_amount(p_unit public."unit", p_amount numeric)
 RETURNS boolean
 LANGUAGE sql
 IMMUTABLE
@@ -59,7 +59,7 @@ CREATE TABLE "shopping_list_history" (
   "shopping_list_item_id" uuid NOT NULL REFERENCES "shopping_list_item" ("id"),
   "bought_at" timestamptz,
   "removed_at" timestamptz,
-  "unit" "Unit" NOT NULL,
+  "unit" "unit" NOT NULL,
   "amount" numeric NOT NULL,
   "updated_at" timestamptz NOT NULL DEFAULT now(),
   -- Who added the entry and who wrote it last (changed amount/unit, bought or
@@ -81,7 +81,7 @@ CREATE UNIQUE INDEX "shopping_list_history_one_open_idx"
 
 -- Which group a unit belongs to. Amounts of units in the same group can be
 -- added together after converting them with unit_factor.
-CREATE OR REPLACE FUNCTION public.unit_group(p_unit public."Unit")
+CREATE OR REPLACE FUNCTION public.unit_group(p_unit public."unit")
 RETURNS text
 LANGUAGE sql
 IMMUTABLE
@@ -97,7 +97,7 @@ AS $$
 $$;
 
 -- How many base units (g, ml, pieces) one of the unit is
-CREATE OR REPLACE FUNCTION public.unit_factor(p_unit public."Unit")
+CREATE OR REPLACE FUNCTION public.unit_factor(p_unit public."unit")
 RETURNS numeric
 LANGUAGE sql
 IMMUTABLE
