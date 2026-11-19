@@ -44,6 +44,10 @@
     "notFound": "Reise nicht gefunden. Bitte prüfe den Einladungslink.",
     "loadFailed": "Reise konnte nicht geladen werden."
   },
+  "invite": {
+    "invite_invalid": "Dieser Einladungslink ist ungültig oder abgelaufen.",
+    "not_authenticated": "Bitte melde dich an, um der Reise beizutreten."
+  },
   "shoppingList": {
     "title": "Einkauf",
     "heading": "Einkaufsliste",

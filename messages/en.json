@@ -44,6 +44,10 @@
     "notFound": "Trip not found. Please check the invite link.",
     "loadFailed": "Couldn't load the trip."
   },
+  "invite": {
+    "invite_invalid": "This invite link is invalid or has expired.",
+    "not_authenticated": "Please sign in to join the trip."
+  },
   "shoppingList": {
     "title": "Shopping",
     "heading": "Shopping list",
