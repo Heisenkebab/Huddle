@@ -13,8 +13,12 @@ export default defineConfig({
     baseURL: "http://localhost:3000",
     trace: "on-first-retry",
   },
-  // CI only installs Chromium
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  // CI only installs Chromium, so mobile uses a Chromium-based device. Mobile
+  // comes first because that's where the app is mainly used.
+  projects: [
+    { name: "mobile", use: { ...devices["Pixel 7"] } },
+    { name: "desktop", use: { ...devices["Desktop Chrome"] } },
+  ],
   // CI runs `npm run build` beforehand, so it serves the production build
   webServer: {
     command: isCI ? "npm run start" : "npm run dev",
