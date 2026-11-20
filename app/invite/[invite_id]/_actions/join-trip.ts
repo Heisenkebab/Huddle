@@ -33,7 +33,13 @@ export async function joinTrip(
       await supabase.auth.getClaims();
     if (claimsError) throw claimsError;
     if (!claims) {
-      const { error: signInError } = await supabase.auth.signInAnonymously();
+      const { error: signInError } = await supabase.auth.signInAnonymously({
+        options: {
+          data: {
+            invite_id: inviteId,
+          },
+        },
+      });
       if (signInError) throw signInError;
     }
 
