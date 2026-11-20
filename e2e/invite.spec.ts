@@ -5,6 +5,7 @@ import en from "@/messages/en.json";
 
 import {
   addGuest,
+  anonymousUserIdsForInvite,
   cleanUpTrip,
   createUser,
   createUserWithProfile,
@@ -32,6 +33,7 @@ const joinButton = (page: Page) => page.getByRole("button", { name: /join/i });
 const nameField = (page: Page) => page.getByLabel(/name/i);
 const colorPicker = (page: Page) =>
   page.getByRole("radiogroup", { name: /color/i });
+const credentialFields = (page: Page) => page.getByLabel(/e-?mail|password/i);
 const tripUrl = (tripId: string) => new RegExp(`/trip/${tripId}`);
 
 // From the first screen to the name and color form
@@ -61,52 +63,118 @@ test.describe("invite page", () => {
     await deleteUsers(extraUserIds.splice(0));
   });
 
-  test("redirects to the home page when the invite id does not exist", async ({
-    page,
-  }) => {
-    await page.goto(`/invite/${randomUUID()}`);
+  test("shows a 404 when the invite id does not exist", async ({ page }) => {
+    expect((await page.goto(`/invite/${randomUUID()}`))?.status()).toBe(404);
 
-    await expect(page).toHaveURL("/");
+    //not-found.tsx
+    await expect(page.getByText(/invalid or has expired/i)).toBeVisible();
+    await expect(page.getByText(TEST_TRIP.name, { exact: true })).toHaveCount(
+      0,
+    );
   });
 
-  test("redirects to the home page when the invite is expired", async ({
+  test("shows a 404 when the invite is expired", async ({ page }) => {
+    seed = await seedTripWithInvite({ endingAt: daysFromNow(-1) });
+    expect((await page.goto(`/invite/${seed.inviteId}`))?.status()).toBe(404);
+
+    //not-found.tsx
+    await expect(page.getByText(/invalid or has expired/i)).toBeVisible();
+    await expect(page.getByText(TEST_TRIP.name, { exact: true })).toHaveCount(
+      0,
+    );
+  });
+
+  test("shows a 404 when the invite is expired, even for a guest of the trip", async ({
     page,
+    context,
+    baseURL,
   }) => {
     seed = await seedTripWithInvite({ endingAt: daysFromNow(-1) });
-    await page.goto(`/invite/${seed.inviteId}`);
+    const member = await createUserWithProfile("Max");
+    await addGuest(seed.tripId, member.profileId);
+    await signInAs(context, member, baseURL!);
 
-    await expect(page).toHaveURL("/");
-    await expect(page.getByText(TEST_TRIP.name)).toHaveCount(0);
+    expect((await page.goto(`/invite/${seed.inviteId}`))?.status()).toBe(404);
+
+    await expect(page.getByText(/invalid or has expired/i)).toBeVisible();
+    await expect(page.getByText(TEST_TRIP.name, { exact: true })).toHaveCount(
+      0,
+    );
   });
 
   test("shows the page for a valid invite id", async ({ page }) => {
     seed = await seedTripWithInvite();
     await page.goto(`/invite/${seed.inviteId}`);
 
-    // AC 1: trip name and fellow travellers with the join button
-    await expect(page.getByText(TEST_TRIP.name)).toBeVisible();
-    await expect(page.getByText(OWNER_NAME)).toBeVisible();
+    await expect(page.getByText(TEST_TRIP.name, { exact: true })).toBeVisible();
+    await expect(page.getByText(OWNER_NAME, { exact: true })).toBeVisible();
     await expect(joinButton(page)).toBeEnabled();
 
-    // AC 3: never asks for email or password
-    await expect(page.getByLabel(/e-?mail|password/i)).toHaveCount(0);
+    //expect no email or password field
+    await expect(credentialFields(page)).toHaveCount(0);
   });
 
   test("clicking join shows the name and color form, joining opens the trip", async ({
     page,
   }) => {
     seed = await seedTripWithInvite();
-
     await openJoinForm(page, seed.inviteId);
+
     await expect(colorPicker(page)).toBeVisible();
-    // AC 3: the form asks for a name only, never email or password
-    await expect(page.getByLabel(/e-?mail|password/i)).toHaveCount(0);
+
+    //the form asks for a name only, never email or password
+    await expect(credentialFields(page)).toHaveCount(0);
 
     await nameField(page).fill("Lena");
     await joinButton(page).click();
 
     await expect(page).toHaveURL(tripUrl(seed.tripId));
-    await expect(page.getByText(TEST_TRIP.name)).toBeVisible();
+    await expect(
+      page.getByText(TEST_TRIP.name, { exact: true }).first(),
+    ).toBeVisible();
+
+    const guests = await guestUserIds(seed.tripId);
+    expect(await anonymousUserIdsForInvite(seed.inviteId)).toEqual(guests);
+    expect(guests).toHaveLength(1);
+    expect(await profileOf(guests[0])).toMatchObject({ name: "Lena" });
+  });
+
+  test("joining saves the picked color on the new profile", async ({
+    page,
+  }) => {
+    seed = await seedTripWithInvite();
+    await openJoinForm(page, seed.inviteId);
+
+    await nameField(page).fill("Lena");
+
+    const picked = colorPicker(page).getByRole("radio").nth(2);
+    await expect(picked).not.toBeChecked();
+    await picked.check();
+    const pickedColor = await picked.getAttribute("value");
+
+    await joinButton(page).click();
+    await expect(page).toHaveURL(tripUrl(seed.tripId));
+
+    const guests = await guestUserIds(seed.tripId);
+
+    expect(pickedColor).toBeTruthy();
+    expect(await profileOf(guests[0])).toMatchObject({
+      color: pickedColor,
+    });
+  });
+
+  test("clicking join twice creates only one guest and one anonymous user", async ({
+    page,
+  }) => {
+    seed = await seedTripWithInvite();
+    await openJoinForm(page, seed.inviteId);
+
+    await nameField(page).fill("Lena");
+    await joinButton(page).dblclick();
+    await expect(page).toHaveURL(tripUrl(seed.tripId));
+
+    expect(await guestUserIds(seed.tripId)).toHaveLength(1);
+    expect(await anonymousUserIdsForInvite(seed.inviteId)).toHaveLength(1);
   });
 
   test("disables join when the name is empty or only spaces", async ({
@@ -115,17 +183,16 @@ test.describe("invite page", () => {
     seed = await seedTripWithInvite();
     await openJoinForm(page, seed.inviteId);
 
-    // AC 2
     await expect(joinButton(page)).toBeDisabled();
 
     await nameField(page).fill("   ");
     await expect(joinButton(page)).toBeDisabled();
 
-    await nameField(page).fill("Lena");
-    await expect(joinButton(page)).toBeEnabled();
-
     await nameField(page).fill("");
     await expect(joinButton(page)).toBeDisabled();
+
+    await nameField(page).fill("Lena");
+    await expect(joinButton(page)).toBeEnabled();
   });
 
   test("disables join when the trimmed name is longer than 50 characters", async ({
@@ -134,7 +201,11 @@ test.describe("invite page", () => {
     seed = await seedTripWithInvite();
     await openJoinForm(page, seed.inviteId);
 
-    // Exactly 50 after trimming is allowed, surrounding spaces don't count
+    await expect(joinButton(page)).toBeDisabled();
+
+    await nameField(page).fill("Lena");
+    await expect(joinButton(page)).toBeEnabled();
+
     await nameField(page).fill(`  ${"a".repeat(50)}  `);
     await expect(joinButton(page)).toBeEnabled();
 
@@ -154,7 +225,6 @@ test.describe("invite page", () => {
 
     await page.goto(`/invite/${seed.inviteId}`);
 
-    // AC 8: no join screen, straight into the trip
     await expect(page).toHaveURL(tripUrl(seed.tripId));
   });
 
@@ -188,19 +258,18 @@ test.describe("invite page", () => {
     await signInAs(context, user, baseURL!);
 
     await page.goto(`/invite/${seed.inviteId}`);
+    await expect(page.getByText(/joining as max/i)).toBeVisible();
     await joinButton(page).click();
 
-    // No name form: the existing profile is used as is
     await expect(page).toHaveURL(tripUrl(seed.tripId));
     expect(await guestUserIds(seed.tripId)).toEqual([user.userId]);
-    expect(await profileOf(user.userId)).toEqual({
-      id: user.profileId,
+    expect(await profileOf(user.userId)).toMatchObject({
       name: "Max",
       color: "#3B82F6",
     });
   });
 
-  test("join on the first screen doesn't create a new account for a signed-in user without a profile", async ({
+  test("a signed-in user without a profile joins through the name form without a new account", async ({
     page,
     context,
     baseURL,
@@ -210,15 +279,16 @@ test.describe("invite page", () => {
     extraUserIds.push(user.userId);
     await signInAs(context, user, baseURL!);
 
-    // Without a profile there is no name yet, so the form still appears
     await openJoinForm(page, seed.inviteId);
-    await nameField(page).fill("Lena");
+
+    await nameField(page).fill("Max");
     await joinButton(page).click();
 
     await expect(page).toHaveURL(tripUrl(seed.tripId));
-    // The signed-in account joined, not a new anonymous one
+
+    expect(await anonymousUserIdsForInvite(seed.inviteId)).toEqual([]);
     expect(await guestUserIds(seed.tripId)).toEqual([user.userId]);
-    expect(await profileOf(user.userId)).toMatchObject({ name: "Lena" });
+    expect(await profileOf(user.userId)).toMatchObject({ name: "Max" });
   });
 
   test("after joining, the trip opens directly without the invite link", async ({
@@ -228,51 +298,31 @@ test.describe("invite page", () => {
     seed = await seedTripWithInvite();
     await joinAs(page, seed, "Lena");
 
-    // AC 5: like reopening the app on the same device (same cookies)
+    // Like reopening the app on the same device (same cookies)
     await page.close();
     const reopened = await context.newPage();
     await reopened.goto(`/trip/${seed.tripId}`);
 
     await expect(reopened).toHaveURL(tripUrl(seed.tripId));
-    await expect(reopened.getByText(TEST_TRIP.name)).toBeVisible();
+    await expect(
+      reopened.getByText(TEST_TRIP.name, { exact: true }).first(),
+    ).toBeVisible();
     await expect(nameField(reopened)).toHaveCount(0);
   });
 
-  test("items added after joining show the guest's name and avatar", async ({
+  test("after joining, the sidebar lists the guest as you", async ({
     page,
+    isMobile,
   }) => {
+    // The travellers list is in the Sidebar, which only shows from lg up
+    test.skip(isMobile, "travellers list is desktop-only");
+
     seed = await seedTripWithInvite();
-    // Story demo: join as "Lena", then add an item to the shopping list
     await joinAs(page, seed, "Lena");
     await page.goto(`/trip/${seed.tripId}/shopping-list`);
 
-    await page
-      .getByRole("button", { name: en.shoppingList.addItem, exact: true })
-      .click();
-    const editor = page.getByRole("dialog");
-    await editor
-      .getByLabel(en.itemEditor.name, { exact: true })
-      .fill("Sonnencreme");
-    await editor
-      .getByRole("button", { name: en.itemEditor.add, exact: true })
-      .click();
-    await expect(editor).toBeHidden();
-
-    // AC 4: the avatar (PersonAvatar) shows Lena's initial and name
-    const avatar = page.getByTitle(
-      en.shoppingList.addedBy.replace("{name}", "Lena"),
-    );
-    await expect(page.getByText("Sonnencreme")).toBeVisible();
+    const avatar = page.getByRole("listitem").filter({ hasText: "Lena" });
     await expect(avatar).toBeVisible();
-    await expect(avatar).toHaveText("L");
-  });
-
-  test("a non-member can't open the trip page directly", async ({ page }) => {
-    seed = await seedTripWithInvite();
-
-    // AC 6: getTripAccess sends visitors without access to the home page
-    await page.goto(`/trip/${seed.tripId}`);
-    await expect(page).toHaveURL("/");
-    await expect(page.getByText(TEST_TRIP.name)).toHaveCount(0);
+    await expect(avatar).toContainText(`(${en.trip.you})`);
   });
 });

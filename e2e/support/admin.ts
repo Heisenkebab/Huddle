@@ -180,6 +180,17 @@ export async function guestUserIds(tripId: string) {
   return data.flatMap((row) => (row.profile ? [row.profile.user_id] : []));
 }
 
+// Anonymous users created by joining through this invite (join-trip tags them
+// with invite_id), to check whether joining created a new account. One page
+// of 1000 is enough for the local test database.
+export async function anonymousUserIdsForInvite(inviteId: string) {
+  const { data, error } = await admin.auth.admin.listUsers({ perPage: 1000 });
+  if (error) throw error;
+  return data.users
+    .filter((u) => u.is_anonymous && u.user_metadata?.invite_id === inviteId)
+    .map((u) => u.id);
+}
+
 // For users a test created that aren't a guest of the trip (cleanUpTrip
 // only removes those). Deleting twice is harmless.
 export async function deleteUsers(userIds: string[]) {
