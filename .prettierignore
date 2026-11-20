@@ -1,0 +1,3 @@
+# Lockfile and files Next.js generates (.gitignore is respected automatically)
+package-lock.json
+AGENTS.md
