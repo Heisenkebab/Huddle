@@ -48,7 +48,22 @@
     "invite_invalid": "This invite link is invalid or has expired.",
     "name_invalid": "Please enter a name with 1 to 50 characters.",
     "color_invalid": "Please pick a valid color.",
-    "not_authenticated": "Please sign in to join the trip."
+    "not_authenticated": "Please sign in to join the trip.",
+    "title": "You're invited",
+    "invitedBy": "<owner>{name}</owner> invited you to a trip.",
+    "tripBadge": "Trip",
+    "join": "Join",
+    "joining": "Joining …",
+    "joiningAs": "Joining as {name}",
+    "back": "Back",
+    "profileTitle": "How should the others see you?",
+    "profileSubtitle": "This is how the others will see you in the trip.",
+    "newIn": "New in “{trip}”",
+    "nameLabel": "Your name",
+    "namePlaceholder": "e.g. Lena",
+    "colorLabel": "Your color",
+    "join_failed": "Couldn't join the trip. Please try again.",
+    "retry": "Try again"
   },
   "shoppingList": {
     "title": "Shopping",
@@ -121,5 +136,15 @@
     "g": "g",
     "l": "l",
     "ml": "ml"
+  },
+  "colors": {
+    "pine": "Pine green",
+    "blue": "Blue",
+    "coral": "Coral",
+    "amber": "Amber",
+    "purple": "Purple",
+    "green": "Green",
+    "teal": "Teal",
+    "pink": "Pink"
   }
 }

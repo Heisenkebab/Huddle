@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { ActionResult } from "@/types/action-result";
 import { Json } from "@/types/database.types";
 
+import { INVITE_INVALID_ERROR } from "../_lib/errors";
+
 export interface TripMember {
   id: string;
   name: string;
@@ -16,6 +18,8 @@ export interface TripDetailsFromInvite {
   end_date: string;
   owner_name: string;
   members: TripMember[];
+  /** Only set when the signed-in user is already a member of the trip */
+  trip_id: string | null;
 }
 
 export type GetTripDetailsFromInviteResult =
@@ -49,7 +53,7 @@ export async function getTripDetailsFromInviteId(
     if (!row) {
       return {
         success: false,
-        error: "This invite is invalid or has expired",
+        error: INVITE_INVALID_ERROR,
       };
     }
 
