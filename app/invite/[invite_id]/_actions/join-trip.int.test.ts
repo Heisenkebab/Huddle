@@ -226,7 +226,7 @@ describe("joinTrip", () => {
     }
   });
 
-  test.each(["", "   ", "x".repeat(51), " " + "x".repeat(50) + " "])(
+  test.each(["", "   ", "x".repeat(51)])(
     "rejects the invalid name %j",
     async (name) => {
       expectTranslatedError(await joinTrip(inviteId, name), "name_invalid");
@@ -234,6 +234,17 @@ describe("joinTrip", () => {
       expect(await createdAnonymousUserIds()).toEqual([]);
     },
   );
+
+  test("ignores surrounding spaces when checking the name length", async () => {
+    expect(await joinTrip(inviteId, `    ${"x".repeat(50)}    `)).toEqual({
+      success: true,
+      data: { tripId },
+    });
+
+    expect(await createdAnonymousUserIds()).toHaveLength(1);
+    const profile = await createdAnonymousGuest();
+    expect(profile.name).toBe("x".repeat(50));
+  });
 
   test.each(["red", "#FFF", "url(x)"])(
     "rejects the invalid color %j",
