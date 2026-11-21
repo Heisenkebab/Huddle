@@ -312,6 +312,7 @@ export type Database = {
           name: string;
           owner_name: string;
           start_date: string;
+          trip_id: string;
         }[];
       };
       is_anonymous_user: { Args: Record<PropertyKey, never>; Returns: boolean };

@@ -1,3 +1,6 @@
+-- trip_id lets the invite page send members straight to their trip. Only
+-- members get it: a non-member only learns the trip id by joining (join_trip
+-- returns it).
 CREATE OR REPLACE FUNCTION public.get_trip_details_from_invite_id(
   p_invite_id uuid
 )
@@ -6,7 +9,8 @@ RETURNS TABLE(
   start_date date,
   end_date date,
   owner_name text,
-  members jsonb
+  members jsonb,
+  trip_id uuid
 )
 LANGUAGE sql
 SECURITY DEFINER
@@ -34,7 +38,9 @@ AS $$
     t.start_date,
     t.end_date,
     owner.name AS owner_name,
-    (SELECT jsonb_agg(to_jsonb(m) ORDER BY m.name) FROM member m) AS members
+    (SELECT jsonb_agg(to_jsonb(m) ORDER BY m.name) FROM member m) AS members,
+    -- NULL for anon too: current_profile_id() is NULL without a session
+    CASE WHEN public.is_trip_member(t.id) THEN t.id END AS trip_id
   FROM invited_trip t
   JOIN public.profile owner ON owner.id = t.owner_id;
 $$;
