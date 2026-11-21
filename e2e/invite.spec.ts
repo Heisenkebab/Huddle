@@ -116,6 +116,7 @@ test.describe("invite page", () => {
 
   test("clicking join shows the name and color form, joining opens the trip", async ({
     page,
+    isMobile,
   }) => {
     seed = await seedTripWithInvite();
     await openJoinForm(page, seed.inviteId);
@@ -129,9 +130,12 @@ test.describe("invite page", () => {
     await joinButton(page).click();
 
     await expect(page).toHaveURL(tripUrl(seed.tripId));
-    await expect(
-      page.getByText(TEST_TRIP.name, { exact: true }).first(),
-    ).toBeVisible();
+
+    // Trip has no Sidebar on mobile
+    if (!isMobile)
+      await expect(
+        page.getByText(TEST_TRIP.name, { exact: true }).first(),
+      ).toBeVisible();
 
     const guests = await guestUserIds(seed.tripId);
     expect(await anonymousUserIdsForInvite(seed.inviteId)).toEqual(guests);
@@ -294,6 +298,7 @@ test.describe("invite page", () => {
   test("after joining, the trip opens directly without the invite link", async ({
     page,
     context,
+    isMobile,
   }) => {
     seed = await seedTripWithInvite();
     await joinAs(page, seed, "Lena");
@@ -304,9 +309,12 @@ test.describe("invite page", () => {
     await reopened.goto(`/trip/${seed.tripId}`);
 
     await expect(reopened).toHaveURL(tripUrl(seed.tripId));
-    await expect(
-      reopened.getByText(TEST_TRIP.name, { exact: true }).first(),
-    ).toBeVisible();
+
+    // Trip has no Sidebar on mobile
+    if (!isMobile)
+      await expect(
+        reopened.getByText(TEST_TRIP.name, { exact: true }).first(),
+      ).toBeVisible();
     await expect(nameField(reopened)).toHaveCount(0);
   });
 
