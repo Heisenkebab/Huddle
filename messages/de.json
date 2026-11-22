@@ -30,7 +30,8 @@
   "errors": {
     "featureUnavailable": "Diese Funktion ist derzeit nicht verfügbar.",
     "pageNotFound": "Diese Seite gibt es (noch) nicht.",
-    "notFoundTitle": "Nicht gefunden"
+    "notFoundTitle": "Nicht gefunden",
+    "backHome": "Zur Startseite"
   },
   "trip": {
     "fallbackName": "Reise",

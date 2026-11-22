@@ -30,7 +30,8 @@
   "errors": {
     "featureUnavailable": "This feature is currently unavailable.",
     "pageNotFound": "This page doesn't exist (yet).",
-    "notFoundTitle": "Not found"
+    "notFoundTitle": "Not found",
+    "backHome": "Back to home"
   },
   "trip": {
     "fallbackName": "Trip",
