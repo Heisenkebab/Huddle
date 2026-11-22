@@ -2,6 +2,7 @@ import { execSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 
+import { PROFILE_COLORS } from "@/lib/profile";
 import { Database } from "@/types/database.types";
 
 export const OWNER_NAME = "Owner";
@@ -65,7 +66,11 @@ export async function seedTripWithInvite(
 
   const { data: profile } = await admin
     .from("profile")
-    .insert({ user_id: user.user.id, name: OWNER_NAME, color: "#E0A526" })
+    .insert({
+      user_id: user.user.id,
+      name: OWNER_NAME,
+      color: PROFILE_COLORS.amber,
+    })
     .select("id")
     .single()
     .throwOnError();

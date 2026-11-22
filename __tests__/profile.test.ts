@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest";
 
 import { isNameTaken, leastUsedColor, PROFILE_COLORS } from "@/lib/profile";
 
-const [pine, blue, coral] = PROFILE_COLORS.map((c) => c.value);
+const { pine, blue, coral } = PROFILE_COLORS;
 
 describe("isNameTaken", () => {
   const members = [{ name: "Anna" }, { name: " Lena " }];
@@ -46,7 +46,7 @@ describe("leastUsedColor", () => {
   });
 
   test("when every color is taken, picks the least used one", () => {
-    const all = PROFILE_COLORS.map((c) => ({ color: c.value }));
+    const all = Object.values(PROFILE_COLORS).map((color) => ({ color }));
     expect(leastUsedColor(all)).toBe(pine);
     expect(leastUsedColor([...all, { color: pine }])).toBe(blue);
   });

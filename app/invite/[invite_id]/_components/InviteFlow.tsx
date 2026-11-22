@@ -8,7 +8,11 @@ import { useRef, useState, useTransition } from "react";
 import PersonAvatar from "@/components/PersonAvatar";
 import { Button } from "@/components/ui/button";
 import { formatTripDates } from "@/lib/format";
-import { isValidProfileName, PROFILE_COLORS } from "@/lib/profile";
+import {
+  isValidProfileName,
+  PROFILE_COLOR_KEYS,
+  PROFILE_COLORS,
+} from "@/lib/profile";
 import type { Profile } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -73,7 +77,7 @@ export default function InviteFlow({
   const router = useRouter();
   const [step, setStep] = useState<"invite" | "profile">("invite");
   const [name, setName] = useState("");
-  const [color, setColor] = useState<string>(PROFILE_COLORS[0].value);
+  const [color, setColor] = useState<string>(PROFILE_COLORS.pine);
   const [error, setError] = useState<JoinError | null>(null);
   const [pending, startTransition] = useTransition();
   // Blocks a second click before the re-render disables the button, which
@@ -325,16 +329,16 @@ function ProfileStep({
           aria-labelledby="invite-color"
           className="flex flex-wrap gap-2.5"
         >
-          {PROFILE_COLORS.map((c) => (
-            <span key={c.value} className="relative grid place-items-center">
+          {PROFILE_COLOR_KEYS.map((key) => (
+            <span key={key} className="relative grid place-items-center">
               <input
                 type="radio"
                 name="color"
-                value={c.value}
-                checked={color === c.value}
-                onChange={() => onColorChange(c.value)}
-                aria-label={tColors(c.key)}
-                style={{ background: c.value }}
+                value={PROFILE_COLORS[key]}
+                checked={color === PROFILE_COLORS[key]}
+                onChange={() => onColorChange(PROFILE_COLORS[key])}
+                aria-label={tColors(key)}
+                style={{ background: PROFILE_COLORS[key] }}
                 className="peer size-9 appearance-none rounded-full ring-offset-2 ring-offset-background outline-none checked:ring-2 checked:ring-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50"
               />
               <Check

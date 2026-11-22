@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { expect, test, type Page } from "@playwright/test";
 
+import { PROFILE_COLORS } from "@/lib/profile";
 import en from "@/messages/en.json";
 
 import {
@@ -35,6 +36,12 @@ const colorPicker = (page: Page) =>
   page.getByRole("radiogroup", { name: /color/i });
 const credentialFields = (page: Page) => page.getByLabel(/e-?mail|password/i);
 const tripUrl = (tripId: string) => new RegExp(`/trip/${tripId}`);
+const duplicatedNameHint = (page: Page) =>
+  page.getByText(/is already in the trip/i);
+
+const amber = async (page: Page) =>
+  colorPicker(page).getByRole("radio", { name: en.colors.amber });
+const colorTakenHint = (page: Page) => page.getByText(/this color too/i);
 
 // From the first screen to the name and color form
 async function openJoinForm(page: Page, inviteId: string) {
@@ -43,12 +50,42 @@ async function openJoinForm(page: Page, inviteId: string) {
   await expect(nameField(page)).toBeVisible();
 }
 
-// Signed out: through both screens until the trip opens
+// Through the name form until the trip opens
 async function joinAs(page: Page, seed: SeededTrip, name: string) {
   await openJoinForm(page, seed.inviteId);
   await nameField(page).fill(name);
   await joinButton(page).click();
   await expect(page).toHaveURL(tripUrl(seed.tripId));
+}
+
+// not-found.tsx: a 404 that shows nothing of the trip
+async function expectInviteNotFound(page: Page, inviteId: string) {
+  await test.step(
+    "invite is not found",
+    async () => {
+      expect((await page.goto(`/invite/${inviteId}`))?.status()).toBe(404);
+      await expect(page.getByText(/invalid or has expired/i)).toBeVisible();
+      await expect(page.getByText(TEST_TRIP.name, { exact: true })).toHaveCount(
+        0,
+      );
+    },
+    { box: true },
+  );
+}
+
+async function expectTripOpen(page: Page, tripId: string, isMobile: boolean) {
+  await test.step(
+    "trip is open",
+    async () => {
+      await expect(page).toHaveURL(tripUrl(tripId));
+      // Trip has no Sidebar on mobile
+      if (!isMobile)
+        await expect(
+          page.getByText(TEST_TRIP.name, { exact: true }).first(),
+        ).toBeVisible();
+    },
+    { box: true },
+  );
 }
 
 // KAN-103: join a trip through the invite link with just a name
@@ -64,24 +101,12 @@ test.describe("invite page", () => {
   });
 
   test("shows a 404 when the invite id does not exist", async ({ page }) => {
-    expect((await page.goto(`/invite/${randomUUID()}`))?.status()).toBe(404);
-
-    //not-found.tsx
-    await expect(page.getByText(/invalid or has expired/i)).toBeVisible();
-    await expect(page.getByText(TEST_TRIP.name, { exact: true })).toHaveCount(
-      0,
-    );
+    await expectInviteNotFound(page, randomUUID());
   });
 
   test("shows a 404 when the invite is expired", async ({ page }) => {
     seed = await seedTripWithInvite({ endingAt: daysFromNow(-1) });
-    expect((await page.goto(`/invite/${seed.inviteId}`))?.status()).toBe(404);
-
-    //not-found.tsx
-    await expect(page.getByText(/invalid or has expired/i)).toBeVisible();
-    await expect(page.getByText(TEST_TRIP.name, { exact: true })).toHaveCount(
-      0,
-    );
+    await expectInviteNotFound(page, seed.inviteId);
   });
 
   test("shows a 404 when the invite is expired, even for a guest of the trip", async ({
@@ -94,12 +119,7 @@ test.describe("invite page", () => {
     await addGuest(seed.tripId, member.profileId);
     await signInAs(context, member, baseURL!);
 
-    expect((await page.goto(`/invite/${seed.inviteId}`))?.status()).toBe(404);
-
-    await expect(page.getByText(/invalid or has expired/i)).toBeVisible();
-    await expect(page.getByText(TEST_TRIP.name, { exact: true })).toHaveCount(
-      0,
-    );
+    await expectInviteNotFound(page, seed.inviteId);
   });
 
   test("shows the page for a valid invite id", async ({ page }) => {
@@ -129,13 +149,7 @@ test.describe("invite page", () => {
     await nameField(page).fill("Lena");
     await joinButton(page).click();
 
-    await expect(page).toHaveURL(tripUrl(seed.tripId));
-
-    // Trip has no Sidebar on mobile
-    if (!isMobile)
-      await expect(
-        page.getByText(TEST_TRIP.name, { exact: true }).first(),
-      ).toBeVisible();
+    await expectTripOpen(page, seed.tripId, isMobile);
 
     const guests = await guestUserIds(seed.tripId);
     expect(await anonymousUserIdsForInvite(seed.inviteId)).toEqual(guests);
@@ -283,12 +297,7 @@ test.describe("invite page", () => {
     extraUserIds.push(user.userId);
     await signInAs(context, user, baseURL!);
 
-    await openJoinForm(page, seed.inviteId);
-
-    await nameField(page).fill("Max");
-    await joinButton(page).click();
-
-    await expect(page).toHaveURL(tripUrl(seed.tripId));
+    await joinAs(page, seed, "Max");
 
     expect(await anonymousUserIdsForInvite(seed.inviteId)).toEqual([]);
     expect(await guestUserIds(seed.tripId)).toEqual([user.userId]);
@@ -308,13 +317,7 @@ test.describe("invite page", () => {
     const reopened = await context.newPage();
     await reopened.goto(`/trip/${seed.tripId}`);
 
-    await expect(reopened).toHaveURL(tripUrl(seed.tripId));
-
-    // Trip has no Sidebar on mobile
-    if (!isMobile)
-      await expect(
-        reopened.getByText(TEST_TRIP.name, { exact: true }).first(),
-      ).toBeVisible();
+    await expectTripOpen(reopened, seed.tripId, isMobile);
     await expect(nameField(reopened)).toHaveCount(0);
   });
 
@@ -332,5 +335,110 @@ test.describe("invite page", () => {
     const avatar = page.getByRole("listitem").filter({ hasText: "Lena" });
     await expect(avatar).toBeVisible();
     await expect(avatar).toContainText(`(${en.trip.you})`);
+  });
+
+  // Telling trip members apart: a nudge on a taken name, a free color preselected
+  test.describe("same name and color as a member", () => {
+    test("warns when the name matches a member's, ignoring case and spaces", async ({
+      page,
+    }) => {
+      seed = await seedTripWithInvite();
+      await openJoinForm(page, seed.inviteId);
+      await nameField(page).fill(` ${OWNER_NAME.toLowerCase()} `);
+      await expect(duplicatedNameHint(page)).toBeVisible();
+    });
+
+    test("the warning goes away once the name is changed", async ({ page }) => {
+      seed = await seedTripWithInvite();
+      await openJoinForm(page, seed.inviteId);
+
+      await nameField(page).fill(OWNER_NAME);
+      await expect(duplicatedNameHint(page)).toBeVisible();
+
+      await nameField(page).fill(`${OWNER_NAME} M.`);
+      await expect(duplicatedNameHint(page)).toBeHidden();
+    });
+
+    test("can still join with a taken name", async ({ page, isMobile }) => {
+      seed = await seedTripWithInvite();
+      await openJoinForm(page, seed.inviteId);
+      await nameField(page).fill(OWNER_NAME);
+
+      await expect(joinButton(page)).toBeEnabled();
+      await joinButton(page).click();
+
+      await expectTripOpen(page, seed.tripId, isMobile);
+      const guests = await guestUserIds(seed.tripId);
+      expect(guests).toHaveLength(1);
+      expect(await profileOf(guests[0])).toMatchObject({ name: OWNER_NAME });
+    });
+
+    test("preselects a color no member has", async ({ page }) => {
+      // The seeded owner has amber
+      seed = await seedTripWithInvite();
+      await openJoinForm(page, seed.inviteId);
+      await expect(
+        colorPicker(page).getByRole("radio", { checked: true }),
+      ).toHaveCount(1);
+    });
+
+    for (const { extra, names } of [
+      { extra: [], names: /^Owner has/ },
+      { extra: ["Max"], names: /^Max and Owner have/ },
+      { extra: ["Max", "Lena"], names: /^Lena, Max and 1 other person have/ },
+    ]) {
+      test(`hints at ${extra.length + 1} member(s) with the picked color, still selectable`, async ({
+        page,
+      }) => {
+        seed = await seedTripWithInvite();
+        for (const name of extra) {
+          const guest = await createUserWithProfile(name, PROFILE_COLORS.amber);
+          extraUserIds.push(guest.userId);
+          await addGuest(seed.tripId, guest.profileId);
+        }
+        await openJoinForm(page, seed.inviteId);
+
+        // a free color is preselected, so no hint yet
+        await expect(colorTakenHint(page)).toBeHidden();
+
+        const amberRadio = await amber(page);
+        await amberRadio.check();
+        await expect(amberRadio).toBeChecked();
+        await expect(await colorTakenHint(page)).toHaveText(names);
+        await expect(amberRadio).toHaveAccessibleDescription(names);
+
+        // still joinable with it
+        await nameField(page).fill("Tim");
+        await joinButton(page).click();
+        await expect(page).toHaveURL(tripUrl(seed.tripId));
+
+        const joined = await anonymousUserIdsForInvite(seed.inviteId);
+        expect(joined).toHaveLength(1);
+        expect(await profileOf(joined[0])).toMatchObject({
+          name: "Tim",
+          color: PROFILE_COLORS.amber,
+        });
+      });
+    }
+
+    test("with every color taken, still preselects one", async ({ page }) => {
+      seed = await seedTripWithInvite();
+      const ownerProfile = await profileOf(seed.ownerUserId);
+      if (!ownerProfile) throw new Error("There is no owner profile");
+      //Add all colors to the trip
+      for (const [key, value] of Object.entries(PROFILE_COLORS)) {
+        //Owner color
+        if (value.toUpperCase() == ownerProfile.color.toUpperCase()) continue;
+        const guest = await createUserWithProfile(key, value);
+        extraUserIds.push(guest.userId);
+        await addGuest(seed.tripId, guest.profileId);
+      }
+
+      await openJoinForm(page, seed.inviteId);
+
+      await expect(
+        colorPicker(page).getByRole("radio", { checked: true }),
+      ).toHaveCount(1);
+    });
   });
 });
