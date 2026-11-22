@@ -9,18 +9,25 @@ import PersonAvatar from "@/components/PersonAvatar";
 import { Button } from "@/components/ui/button";
 import { formatTripDates } from "@/lib/format";
 import {
+  isNameTaken,
   isValidProfileName,
+  leastUsedColor,
   PROFILE_COLOR_KEYS,
   PROFILE_COLORS,
 } from "@/lib/profile";
 import type { Profile } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-import type { TripDetailsFromInvite } from "../_actions/get-trip-details-from-invite-id";
+import type {
+  TripDetailsFromInvite,
+  TripMember,
+} from "../_actions/get-trip-details-from-invite-id";
 import { joinTrip } from "../_actions/join-trip";
 
 // Avatars shown in the trip card before collapsing into "+n"
 const MAX_AVATARS = 6;
+// Names (and avatars) in the color hint before collapsing into a count
+const MAX_HINT_NAMES = 2;
 
 // Errors join_trip can return that have their own message
 const JOIN_ERRORS = [
@@ -77,7 +84,8 @@ export default function InviteFlow({
   const router = useRouter();
   const [step, setStep] = useState<"invite" | "profile">("invite");
   const [name, setName] = useState("");
-  const [color, setColor] = useState<string>(PROFILE_COLORS.pine);
+  // A color nobody in the trip has yet, so the new avatar stands out
+  const [color, setColor] = useState(() => leastUsedColor(trip.members));
   const [error, setError] = useState<JoinError | null>(null);
   const [pending, startTransition] = useTransition();
   // Blocks a second click before the re-render disables the button, which
@@ -121,6 +129,7 @@ export default function InviteFlow({
       ) : (
         <ProfileStep
           tripName={trip.name}
+          members={trip.members}
           name={name}
           color={color}
           pending={pending}
@@ -234,6 +243,7 @@ function InviteStep({
 
 function ProfileStep({
   tripName,
+  members,
   name,
   color,
   pending,
@@ -244,6 +254,7 @@ function ProfileStep({
   onJoin,
 }: {
   tripName: string;
+  members: TripMember[];
   name: string;
   color: string;
   pending: boolean;
@@ -257,6 +268,11 @@ function ProfileStep({
   const tColors = useTranslations("colors");
   const trimmed = name.trim();
   const canJoin = isValidProfileName(name) && !pending;
+  // Only hints (design 1B-5b, 1B-6): a taken name or color can still join
+  const sameName = members.find((m) => isNameTaken(name, [m]));
+  const sameColor = members.filter(
+    (m) => m.color.toUpperCase() === color.toUpperCase(),
+  );
 
   return (
     <form
@@ -317,9 +333,22 @@ function ProfileStep({
             placeholder={t("namePlaceholder")}
             autoComplete="nickname"
             autoFocus
+            aria-describedby={sameName ? "invite-name-hint" : undefined}
             className="h-full min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground"
           />
         </div>
+        {sameName && (
+          <div className="mt-2 flex items-center gap-2">
+            <PersonAvatar
+              name={sameName.name}
+              color={sameName.color}
+              size={16}
+            />
+            <p id="invite-name-hint" className="text-xs text-muted-foreground">
+              {t.rich("nameTaken", { name: sameName.name, b: bold })}
+            </p>
+          </div>
+        )}
 
         <p id="invite-color" className="mt-6 mb-2 text-sm font-semibold">
           {t("colorLabel")}
@@ -338,6 +367,11 @@ function ProfileStep({
                 checked={color === PROFILE_COLORS[key]}
                 onChange={() => onColorChange(PROFILE_COLORS[key])}
                 aria-label={tColors(key)}
+                aria-describedby={
+                  color === PROFILE_COLORS[key] && sameColor.length > 0
+                    ? "invite-color-hint"
+                    : undefined
+                }
                 style={{ background: PROFILE_COLORS[key] }}
                 className="peer size-9 appearance-none rounded-full ring-offset-2 ring-offset-background outline-none checked:ring-2 checked:ring-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50"
               />
@@ -349,6 +383,7 @@ function ProfileStep({
             </span>
           ))}
         </div>
+        {sameColor.length > 0 && <ColorTakenHint members={sameColor} />}
 
         <div className="mt-auto flex flex-col gap-3 pt-8 lg:pt-6">
           {error}
@@ -363,5 +398,46 @@ function ProfileStep({
         </div>
       </div>
     </form>
+  );
+}
+
+const bold = (chunks: React.ReactNode) => (
+  <b className="font-semibold text-foreground">{chunks}</b>
+);
+
+/** Who else has the picked color: their avatars and names, then a count */
+function ColorTakenHint({ members }: { members: TripMember[] }) {
+  const t = useTranslations("invite");
+  const shown = members.slice(0, MAX_HINT_NAMES);
+  const others = members.length - shown.length;
+  const [first, second] = shown.map((m) => m.name);
+
+  return (
+    <div className="mt-3 flex items-center gap-2">
+      <ul aria-hidden className="flex shrink-0">
+        {shown.map((m) => (
+          <li key={m.id} className="-ml-1 first:ml-0">
+            <PersonAvatar
+              name={m.name}
+              color={m.color}
+              size={20}
+              className="ring-2 ring-background"
+            />
+          </li>
+        ))}
+        {others > 0 && (
+          <li className="-ml-1 grid size-5 place-items-center rounded-full bg-border text-[9px] font-semibold text-foreground/70 ring-2 ring-background">
+            +{others}
+          </li>
+        )}
+      </ul>
+      <p id="invite-color-hint" className="text-xs text-muted-foreground">
+        {members.length === 1
+          ? t.rich("colorTakenOne", { first, b: bold })
+          : others === 0
+            ? t.rich("colorTakenTwo", { first, second, b: bold })
+            : t.rich("colorTakenMore", { first, second, others, b: bold })}
+      </p>
+    </div>
   );
 }

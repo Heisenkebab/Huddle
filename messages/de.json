@@ -63,6 +63,10 @@
     "nameLabel": "Dein Name",
     "namePlaceholder": "z. B. Lena",
     "colorLabel": "Deine Farbe",
+    "nameTaken": "<b>{name}</b> ist schon in der Reise. Mit Nachname oder Spitzname könnt ihr euch auseinanderhalten.",
+    "colorTakenOne": "<b>{first}</b> hat diese Farbe auch. Du kannst sie trotzdem nehmen.",
+    "colorTakenTwo": "<b>{first}</b> und <b>{second}</b> haben diese Farbe auch. Du kannst sie trotzdem nehmen.",
+    "colorTakenMore": "<b>{first}</b>, <b>{second}</b> und <b>{others, plural, one {# weitere Person} other {# weitere Personen}}</b> haben diese Farbe auch. Du kannst sie trotzdem nehmen.",
     "join_failed": "Beitreten hat nicht geklappt. Bitte versuche es erneut.",
     "retry": "Erneut versuchen"
   },
