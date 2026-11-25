@@ -30,7 +30,8 @@
   "errors": {
     "featureUnavailable": "This feature is currently unavailable.",
     "pageNotFound": "This page doesn't exist (yet).",
-    "notFoundTitle": "Not found"
+    "notFoundTitle": "Not found",
+    "backHome": "Back to home"
   },
   "trip": {
     "fallbackName": "Trip",
@@ -43,6 +44,31 @@
     "copyFailed": "Couldn't copy",
     "notFound": "Trip not found. Please check the invite link.",
     "loadFailed": "Couldn't load the trip."
+  },
+  "invite": {
+    "invite_invalid": "This invite link is invalid or has expired.",
+    "name_invalid": "Please enter a name with 1 to 50 characters.",
+    "color_invalid": "Please pick a valid color.",
+    "not_authenticated": "Please sign in to join the trip.",
+    "title": "You're invited",
+    "invitedBy": "<owner>{name}</owner> invited you to a trip.",
+    "tripBadge": "Trip",
+    "join": "Join",
+    "joining": "Joining …",
+    "joiningAs": "Joining as {name}",
+    "back": "Back",
+    "profileTitle": "How should the others see you?",
+    "profileSubtitle": "This is how the others will see you in the trip.",
+    "newIn": "New in “{trip}”",
+    "nameLabel": "Your name",
+    "namePlaceholder": "e.g. Lena",
+    "colorLabel": "Your color",
+    "nameTaken": "<b>{name}</b> is already in the trip. A last name or nickname helps you tell each other apart.",
+    "colorTakenOne": "<b>{first}</b> has this color too. You can still pick it.",
+    "colorTakenTwo": "<b>{first}</b> and <b>{second}</b> have this color too. You can still pick it.",
+    "colorTakenMore": "<b>{first}</b>, <b>{second}</b> and <b>{others, plural, one {# other person} other {# other people}}</b> have this color too. You can still pick it.",
+    "join_failed": "Couldn't join the trip. Please try again.",
+    "retry": "Try again"
   },
   "shoppingList": {
     "title": "Shopping",
@@ -115,5 +141,15 @@
     "g": "g",
     "l": "l",
     "ml": "ml"
+  },
+  "colors": {
+    "pine": "Pine green",
+    "blue": "Blue",
+    "coral": "Coral",
+    "amber": "Amber",
+    "purple": "Purple",
+    "green": "Green",
+    "teal": "Teal",
+    "pink": "Pink"
   }
 }

@@ -21,9 +21,13 @@ export function getSupabase(): SupabaseClient<Database> {
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+export function isUuid(id: string | undefined): id is string {
+  return !!id && UUID_RE.test(id);
+}
+
 /** Trip IDs are UUIDs (hard to guess, since the link works without a password). */
 export function isTripId(id: string | undefined): id is string {
-  return !!id && UUID_RE.test(id);
+  return isUuid(id);
 }
 
 /** Path to a section of a trip, e.g. tripPath(id, "shopping-list"). */
