@@ -1,6 +1,6 @@
 -- Joins the current user to the trip behind an invite link and returns its id.
 -- SECURITY DEFINER because the joiner can't read trip_invite yet and
--- guest_trip has no insert policy (see 20261015120000_rls.sql).
+-- guest_trip has no insert policy (see 20261014000000_trips.sql).
 CREATE OR REPLACE FUNCTION public.join_trip(
   p_invite_id uuid,
   p_name text,
