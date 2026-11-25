@@ -22,6 +22,8 @@ export async function createTestUser(name = "Test"): Promise<TestUser> {
     email,
     password: TEST_PASSWORD,
     email_confirm: true,
+    // Same flag the server sets, so the before-user-created hook allows it
+    app_metadata: { created_by_server: true },
   });
   if (user.error) throw user.error;
 

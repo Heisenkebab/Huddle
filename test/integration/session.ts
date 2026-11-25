@@ -24,14 +24,17 @@ export async function signInAs(email: string, password: string) {
 }
 
 // Anonymous users can't sign in again later, so keep the returned token and
-// switch back to them with useAccessToken()
-export async function signInAnonymously() {
+// switch back to them with useAccessToken(). The before-user-created hook
+// only lets anonymous sign-ins through with a valid invite_id.
+export async function signInAnonymously(inviteId?: string) {
   const client = createClient(
     inject("supabaseUrl"),
     inject("supabasePublishableKey"),
     { auth: { persistSession: false } },
   );
-  const { data, error } = await client.auth.signInAnonymously();
+  const { data, error } = await client.auth.signInAnonymously(
+    inviteId ? { options: { data: { invite_id: inviteId } } } : undefined,
+  );
   if (error) throw error;
   accessToken = data.session!.access_token;
   refreshToken = data.session!.refresh_token;
