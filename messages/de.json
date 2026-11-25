@@ -30,7 +30,8 @@
   "errors": {
     "featureUnavailable": "Diese Funktion ist derzeit nicht verfügbar.",
     "pageNotFound": "Diese Seite gibt es (noch) nicht.",
-    "notFoundTitle": "Nicht gefunden"
+    "notFoundTitle": "Nicht gefunden",
+    "backHome": "Zur Startseite"
   },
   "trip": {
     "fallbackName": "Reise",
@@ -43,6 +44,31 @@
     "copyFailed": "Kopieren nicht möglich",
     "notFound": "Reise nicht gefunden. Bitte prüfe den Einladungslink.",
     "loadFailed": "Reise konnte nicht geladen werden."
+  },
+  "invite": {
+    "invite_invalid": "Dieser Einladungslink ist ungültig oder abgelaufen.",
+    "name_invalid": "Bitte gib einen Namen mit 1 bis 50 Zeichen ein.",
+    "color_invalid": "Bitte wähle eine gültige Farbe.",
+    "not_authenticated": "Bitte melde dich an, um der Reise beizutreten.",
+    "title": "Du bist eingeladen",
+    "invitedBy": "<owner>{name}</owner> hat dich zu einer Reise eingeladen.",
+    "tripBadge": "Reise",
+    "join": "Beitreten",
+    "joining": "Trete bei …",
+    "joiningAs": "Du trittst als {name} bei",
+    "back": "Zurück",
+    "profileTitle": "Wie sollen dich die anderen sehen?",
+    "profileSubtitle": "So sehen dich die anderen in der Reise.",
+    "newIn": "Neu in „{trip}“",
+    "nameLabel": "Dein Name",
+    "namePlaceholder": "z. B. Lena",
+    "colorLabel": "Deine Farbe",
+    "nameTaken": "<b>{name}</b> ist schon in der Reise. Mit Nachname oder Spitzname könnt ihr euch auseinanderhalten.",
+    "colorTakenOne": "<b>{first}</b> hat diese Farbe auch. Du kannst sie trotzdem nehmen.",
+    "colorTakenTwo": "<b>{first}</b> und <b>{second}</b> haben diese Farbe auch. Du kannst sie trotzdem nehmen.",
+    "colorTakenMore": "<b>{first}</b>, <b>{second}</b> und <b>{others, plural, one {# weitere Person} other {# weitere Personen}}</b> haben diese Farbe auch. Du kannst sie trotzdem nehmen.",
+    "join_failed": "Beitreten hat nicht geklappt. Bitte versuche es erneut.",
+    "retry": "Erneut versuchen"
   },
   "shoppingList": {
     "title": "Einkauf",
@@ -115,5 +141,15 @@
     "g": "g",
     "l": "l",
     "ml": "ml"
+  },
+  "colors": {
+    "pine": "Tannengrün",
+    "blue": "Blau",
+    "coral": "Koralle",
+    "amber": "Bernstein",
+    "purple": "Lila",
+    "green": "Grün",
+    "teal": "Türkis",
+    "pink": "Pink"
   }
 }

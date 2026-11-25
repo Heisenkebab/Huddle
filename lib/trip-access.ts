@@ -26,6 +26,21 @@ const getCurrentProfileId = cache(async (): Promise<string | null> => {
   return data;
 });
 
+/** Profile of the signed-in user, null if not signed in or without a profile */
+export const getCurrentProfile = cache(async (): Promise<Profile | null> => {
+  const profileId = await getCurrentProfileId();
+  if (!profileId) return null;
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("profile")
+    .select("id, name, color")
+    .eq("id", profileId)
+    .single();
+  if (error) throw new Error(error.message);
+  return data;
+});
+
 /**
  * Checks on loading a trip that the user is signed in and a member of it.
  * Not signed in, no profile, or no such trip / not a member → NO_ACCESS_PATH.
