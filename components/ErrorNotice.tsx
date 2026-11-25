@@ -1,13 +1,11 @@
-import { Coffee } from "lucide-react";
+import { House } from "lucide-react";
 import { useTranslations } from "next-intl";
+import Link from "next/link";
 
-import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-/** Text for HTTP status 418 (RFC 2324). Shown for all missing/unavailable pages. */
-export const ERROR_CODE = "418";
-export const ERROR_MESSAGE = "I'm a teapot";
-
+/** A page that's missing or unavailable: the message, and a way back home. */
 export default function ErrorNotice({
   text,
   className,
@@ -17,22 +15,27 @@ export default function ErrorNotice({
 }) {
   const t = useTranslations("errors");
   return (
-    <Card
-      role="status"
+    <section
       className={cn(
-        "gap-0 rounded-3xl py-10 shadow-none dark:shadow-[0_4px_20px_rgb(0_0_0/0.6)]",
+        "flex flex-col items-start gap-6 rounded-3xl border bg-card px-6 py-8 sm:px-8",
         className,
       )}
     >
-      <CardContent className="flex flex-col items-center gap-1.5 text-center">
-        <span className="mb-2 grid size-14 place-items-center rounded-full bg-secondary text-primary">
-          <Coffee className="size-7" strokeWidth={1.8} />
-        </span>
-        <p className="font-semibold">{text ?? t("featureUnavailable")}</p>
-        <p className="text-sm text-muted-foreground">
-          Error {ERROR_CODE} - {ERROR_MESSAGE}
-        </p>
-      </CardContent>
-    </Card>
+      <p
+        role="status"
+        className="text-xl leading-snug font-semibold text-balance sm:text-2xl"
+      >
+        {text ?? t("featureUnavailable")}
+      </p>
+      <Button
+        asChild
+        className="h-12 w-full rounded-2xl px-5 text-base font-semibold transition-[background-color,transform] focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100 sm:w-auto"
+      >
+        <Link href="/">
+          <House aria-hidden="true" />
+          {t("backHome")}
+        </Link>
+      </Button>
+    </section>
   );
 }

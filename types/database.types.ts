@@ -304,12 +304,27 @@ export type Database = {
           updated_by_name: string;
         }[];
       };
+      get_trip_details_from_invite_id: {
+        Args: { p_invite_id: string };
+        Returns: {
+          end_date: string;
+          members: Json;
+          name: string;
+          owner_name: string;
+          start_date: string;
+          trip_id: string;
+        }[];
+      };
       is_anonymous_user: { Args: Record<PropertyKey, never>; Returns: boolean };
       is_trip_member: { Args: { p_trip_id: string }; Returns: boolean };
       is_trip_owner: { Args: { p_trip_id: string }; Returns: boolean };
       is_valid_amount: {
         Args: { p_amount: number; p_unit: Database["public"]["Enums"]["unit"] };
         Returns: boolean;
+      };
+      join_trip: {
+        Args: { p_color?: string; p_invite_id: string; p_name: string };
+        Returns: string;
       };
       remove_shopping_list_item: {
         Args: { p_item_id: string; p_trip_id: string };

@@ -1,5 +1,4 @@
 import { createServerClient } from "@supabase/ssr";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { Database } from "@/types/database.types";
@@ -40,29 +39,9 @@ export async function proxy(request: NextRequest) {
   );
 
   // Refreshes an expired token; don't run anything in between
-  const { data } = await supabase.auth.getClaims();
-
-  if (!data?.claims) await devSignIn(supabase);
+  await supabase.auth.getClaims();
 
   return response;
-}
-
-/**
- * Development only: there is no way to sign in yet, so sign in as the user
- * from DEV_SIGN_IN_EMAIL / DEV_SIGN_IN_PASSWORD (e.g. a user from seed.sql).
- * Does nothing in production or when the variables aren't set.
- */
-async function devSignIn(supabase: SupabaseClient<Database>) {
-  const email = process.env.DEV_SIGN_IN_EMAIL;
-  const password = process.env.DEV_SIGN_IN_PASSWORD;
-  if (process.env.NODE_ENV !== "development" || !email || !password) return;
-
-  // Writes the session cookies through setAll above
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-  if (error) console.error("devSignIn failed:", error.message);
 }
 
 export const config = {
